@@ -163,7 +163,7 @@ public abstract class AbstractClassifier {
 			classesNames.add(iterator.next().getName());
 		return classesNames;
 	}
-
+	
 	/**
 	 * Resets this classifier (i.e. removes all the classes of gestures).
 	 */

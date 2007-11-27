@@ -732,6 +732,7 @@ public class CShape implements Cloneable, CElement {
 	 * @return the previous children of this shape.
 	 */
 	public LinkedList removeAllChildren() {
+		if(children == null) return null;
 		LinkedList exChildren = (LinkedList) children.clone();
 		for (int i = getChildrenCount() - 1; i >= 0; i--) {
 			removeChild(i);
