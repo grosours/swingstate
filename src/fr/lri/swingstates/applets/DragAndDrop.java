@@ -12,13 +12,16 @@ import java.awt.GradientPaint;
 import java.awt.GridLayout;
 import java.awt.geom.Point2D;
 
-import javax.swing.JSplitPane;
-
 import fr.lri.swingstates.canvas.CElement;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.debug.StateMachineVisualization;
+import fr.lri.swingstates.sm.State;
 import fr.lri.swingstates.sm.StateMachine;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
 
 public class DragAndDrop extends BasicApplet {
 	StateMachine sm;

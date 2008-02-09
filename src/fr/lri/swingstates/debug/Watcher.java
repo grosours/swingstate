@@ -7,9 +7,9 @@ package fr.lri.swingstates.debug;
 
 import javax.swing.event.EventListenerList;
 
+import fr.lri.swingstates.sm.State;
 import fr.lri.swingstates.sm.StateMachine;
-import fr.lri.swingstates.sm.StateMachine.State;
-import fr.lri.swingstates.sm.StateMachine.State.Transition;
+import fr.lri.swingstates.sm.Transition;
 
 
 /**

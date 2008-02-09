@@ -28,7 +28,7 @@ public class TaggedTimer extends Timer {
 		allTags.add(this);
 	}
 
-	String getTagName() {
+	public String getTagName() {
 		return tagName;
 	}
 	

@@ -14,6 +14,9 @@ import fr.lri.swingstates.animations.AnimationTranslateBy;
 import fr.lri.swingstates.canvas.CEllipse;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.Canvas;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Press;
 
 class ReboundingBall extends AnimationTranslateBy {
 

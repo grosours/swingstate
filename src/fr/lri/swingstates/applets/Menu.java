@@ -14,8 +14,8 @@ import fr.lri.swingstates.canvas.CShape;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.CStateMachine.EnterOnTag;
 import fr.lri.swingstates.canvas.CStateMachine.LeaveOnTag;
-import fr.lri.swingstates.sm.StateMachine.State;
-import fr.lri.swingstates.sm.StateMachine.State.Transition;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
 
 public class Menu {
 	

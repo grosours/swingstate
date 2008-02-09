@@ -24,6 +24,11 @@ import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.events.VirtualEvent;
 import fr.lri.swingstates.sm.JNamedTag;
 import fr.lri.swingstates.sm.JStateMachine;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Event;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
 
 
 

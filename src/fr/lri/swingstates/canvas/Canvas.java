@@ -63,8 +63,8 @@ import fr.lri.swingstates.events.PickerEvent;
 import fr.lri.swingstates.events.VirtualEvent;
 import fr.lri.swingstates.events.VirtualPositionEvent;
 import fr.lri.swingstates.events.VirtualShapeEvent;
-import fr.lri.swingstates.sm.BasicInputStateMachine.Enter;
-import fr.lri.swingstates.sm.StateMachine.State.Transition;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Enter;
 
 /**
  * <p>

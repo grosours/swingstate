@@ -17,6 +17,11 @@ import fr.lri.swingstates.canvas.CSegment;
 import fr.lri.swingstates.canvas.CText;
 import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.sm.JStateMachine;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.KeyPress;
+import fr.lri.swingstates.sm.transitions.Release;
+import fr.lri.swingstates.sm.transitions.TimeOut;
 
 class JoystickTextField {
 

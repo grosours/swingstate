@@ -27,6 +27,7 @@ import javax.swing.SwingUtilities;
 import fr.lri.swingstates.events.Picker;
 import fr.lri.swingstates.events.PickerEvent;
 import fr.lri.swingstates.events.Utils;
+import fr.lri.swingstates.sm.transitions.EventOnPosition;
 
 /**
  * A state machine to monitor events with one or more Component.
@@ -55,14 +56,11 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 
 		private Component  lastPicked = null;
 		private Component  picked     = null;
-		private Point location;
 
 		/**
 		 * Builds a <code>JPicker</code>.
 		 */
-		public JPicker() {
-			location = new Point();
-		}
+		public JPicker() { }
 
 		public Component pick(JStateMachine machine, Component component, int x, int y) {
 			lastPicked = picked;
@@ -90,11 +88,6 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 					new Point(x, y),
 					parent);
 			picked = parent.findComponentAt(point);
-			// TODO Is it necessary? --> I don't think so
-			location = SwingUtilities.convertPoint(
-					component,
-					new Point(x, y),
-					picked);
 			return picked;
 		}
 
@@ -113,8 +106,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		}
 
 		public Point2D getLocation() { 
-//			return null; 
-			return location;
+			return null; 
 		}
 
 		public void move(Point2D location) { }

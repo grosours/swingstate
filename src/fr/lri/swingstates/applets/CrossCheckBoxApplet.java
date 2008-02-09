@@ -16,6 +16,11 @@ import javax.swing.JCheckBox;
 import fr.lri.swingstates.canvas.CSegment;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.Canvas;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
 
 public class CrossCheckBoxApplet extends JApplet {
 

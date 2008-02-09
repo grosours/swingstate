@@ -21,6 +21,9 @@ import fr.lri.swingstates.animations.AnimationScaleTo;
 import fr.lri.swingstates.canvas.CRectangle;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.Canvas;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Press;
 
 public class AnimationParams extends BasicApplet {
 

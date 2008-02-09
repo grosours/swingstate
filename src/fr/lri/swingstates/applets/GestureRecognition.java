@@ -12,6 +12,12 @@ import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.gestures.AbstractClassifier;
 import fr.lri.swingstates.gestures.Gesture;
 import fr.lri.swingstates.gestures.rubine.RubineClassifier;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
+import fr.lri.swingstates.sm.transitions.TimeOut;
 
 class InkMachine extends CStateMachine {
 	private Gesture gesture;

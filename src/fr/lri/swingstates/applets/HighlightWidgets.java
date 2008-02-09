@@ -9,6 +9,8 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 import fr.lri.swingstates.sm.JStateMachine;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
 
 public class HighlightWidgets extends BasicApplet {
 

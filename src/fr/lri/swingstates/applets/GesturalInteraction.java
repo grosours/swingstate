@@ -10,6 +10,12 @@ import fr.lri.swingstates.canvas.CShape;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.gestures.Gesture;
 import fr.lri.swingstates.gestures.rubine.RubineClassifier;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
+import fr.lri.swingstates.sm.transitions.TimeOut;
 
 public class GesturalInteraction extends CStateMachine {
 	private GraphicalEditor canvas;

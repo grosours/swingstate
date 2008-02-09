@@ -12,6 +12,11 @@ import fr.lri.swingstates.canvas.CPolyLine;
 import fr.lri.swingstates.canvas.CShape;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.CText;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
+import fr.lri.swingstates.sm.transitions.TimeOut;
 
 public class MarkingMenu extends Menu {
 	private Point2D pInit;

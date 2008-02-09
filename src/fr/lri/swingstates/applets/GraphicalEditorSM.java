@@ -1,6 +1,9 @@
 package fr.lri.swingstates.applets;
 
 import fr.lri.swingstates.canvas.CStateMachine;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.EventOnPosition;
 
 public class GraphicalEditorSM extends GraphicalEditor {
 

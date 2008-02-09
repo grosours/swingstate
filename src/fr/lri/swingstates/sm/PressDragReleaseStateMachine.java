@@ -5,6 +5,11 @@
 */
 package fr.lri.swingstates.sm;
 
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
+
+
 
 public abstract class PressDragReleaseStateMachine extends JStateMachine {
 	

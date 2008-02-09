@@ -24,6 +24,10 @@ import fr.lri.swingstates.canvas.CShape;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.CTag;
 import fr.lri.swingstates.canvas.Canvas;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Release;
 
 public class TestTransform extends BasicApplet {
 

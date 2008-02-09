@@ -16,6 +16,15 @@ import javax.swing.JTextField;
 
 import fr.lri.swingstates.debug.StateMachineVisualization;
 import fr.lri.swingstates.sm.BasicInputStateMachine;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Enter;
+import fr.lri.swingstates.sm.transitions.KeyPress;
+import fr.lri.swingstates.sm.transitions.Leave;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
+import fr.lri.swingstates.sm.transitions.TimeOut;
 
 
 

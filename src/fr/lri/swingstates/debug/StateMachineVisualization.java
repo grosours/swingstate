@@ -11,9 +11,9 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -30,9 +30,12 @@ import fr.lri.swingstates.canvas.CShape;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.CText;
 import fr.lri.swingstates.canvas.Canvas;
+import fr.lri.swingstates.sm.State;
 import fr.lri.swingstates.sm.StateMachine;
-import fr.lri.swingstates.sm.StateMachine.State;
-import fr.lri.swingstates.sm.StateMachine.State.Transition;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
 
 /**
  * A <code>GraphicalNode</code> in a <code>StateMachineVisualization</code>.
@@ -498,7 +501,7 @@ public class StateMachineVisualization extends Canvas {
 	}
 	
 	private void drawSM(){
-		Vector<State> allStates = smToVisualize.getAllStates(); 
+		Collection<State> allStates = smToVisualize.getAllStates(); 
 		int xStep = 100;
 		int x = xStep - xStep/2;
 		int middle = 200;

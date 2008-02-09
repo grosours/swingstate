@@ -6,8 +6,12 @@
 package fr.lri.swingstates.applets;
 
 import java.awt.Component;
-import javax.swing.RootPaneContainer;
+
 import fr.lri.swingstates.sm.JStateMachine;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
 
 public abstract class CrossingInteraction {
 

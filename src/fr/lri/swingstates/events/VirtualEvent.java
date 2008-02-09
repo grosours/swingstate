@@ -8,8 +8,8 @@ package fr.lri.swingstates.events;
 import java.util.EventObject;
 import java.util.LinkedList;
 
-import fr.lri.swingstates.sm.StateMachine.State;
-import fr.lri.swingstates.sm.StateMachine.State.Transition;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
 
 /**
  * A virtual event to send to a state machine.

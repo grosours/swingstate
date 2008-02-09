@@ -22,8 +22,9 @@ import fr.lri.swingstates.events.VirtualCElementEvent;
 import fr.lri.swingstates.events.VirtualPositionEvent;
 import fr.lri.swingstates.events.VirtualShapeEvent;
 import fr.lri.swingstates.sm.BasicInputStateMachine;
-import fr.lri.swingstates.sm.StateMachine.State.Event;
-import fr.lri.swingstates.sm.StateMachine.State.Transition;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Event;
+import fr.lri.swingstates.sm.transitions.EventOnPosition;
 
 /**
  * <p>
@@ -67,6 +68,23 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 
 	LinkedList<CElement> controlledObjects = new LinkedList<CElement>();
 
+	/**
+	 * The key string of events that triggered <code>AnimationStopped</code> transitions.
+	 */
+	public static String ANIMATION_STOPPED   = "AnimationStopped";
+	/**
+	 * The key string of events that triggered <code>AnimationStarted</code> transitions.
+	 */
+	public static String ANIMATION_STARTED   = "AnimationStarted";
+	/**
+	 * The key string of events that triggered <code>AnimationSuspended</code> transitions.
+	 */
+	public static String ANIMATION_SUSPENDED = "AnimationSuspended";
+	/**
+	 * The key string of events that triggered <code>AnimationResumed</code> transitions.
+	 */
+	public static String ANIMATION_RESUMED   = "AnimationResumed";
+	
 	/**
 	 * Builds a CStateMachine.
 	 */
@@ -444,7 +462,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *            "AnimationSuspended" or "AnimationResumed".
 		 */
 		protected AnimationEvent(String keyEvent) {
-			stateInBuilt.super(keyEvent);
+			super(keyEvent);
 		}
 
 		/**
@@ -459,7 +477,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *            The animation that fires this transition.
 		 */
 		protected AnimationEvent(String keyEvent, Animation anim) {
-			stateInBuilt.super(keyEvent);
+			super(keyEvent);
 			animation = anim;
 		}
 
@@ -475,7 +493,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *            The tag of the animation that fires this transition.
 		 */
 		protected AnimationEvent(String keyEvent, ATag tagAnim) {
-			stateInBuilt.super(keyEvent);
+			super(keyEvent);
 			tagAnimation = tagAnim;
 		}
 
@@ -490,7 +508,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *            The name of the output state.
 		 */
 		protected AnimationEvent(String keyEvent, String outState) {
-			stateInBuilt.super(keyEvent, outState);
+			super(keyEvent, outState);
 		}
 
 		/**
@@ -506,7 +524,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *            The name of the output state.
 		 */
 		protected AnimationEvent(String keyEvent, Animation anim, String outState) {
-			stateInBuilt.super(keyEvent, outState);
+			super(keyEvent, outState);
 			animation = anim;
 		}
 
@@ -523,7 +541,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *            The name of the output state.
 		 */
 		protected AnimationEvent(String keyEvent, ATag tagAnim, String outState) {
-			stateInBuilt.super(keyEvent, outState);
+			super(keyEvent, outState);
 			tagAnimation = tagAnim;
 		}
 
@@ -987,7 +1005,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *            The <code>CElement</code> to track.
 		 */
 		public CElementEvent(CElement cElement) {
-			stateInBuilt.super("");
+			super("");
 			element = cElement;
 		}
 
@@ -1001,7 +1019,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *            The name of the output state.
 		 */
 		public CElementEvent(CElement cElement, String outState) {
-			stateInBuilt.super("", outState);
+			super("", outState);
 			element = cElement;
 		}
 

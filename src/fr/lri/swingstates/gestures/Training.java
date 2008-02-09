@@ -61,6 +61,11 @@ import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.gestures.dollar1.Dollar1Classifier;
 import fr.lri.swingstates.gestures.rubine.RubineClassifier;
+import fr.lri.swingstates.sm.State;
+import fr.lri.swingstates.sm.Transition;
+import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.Press;
+import fr.lri.swingstates.sm.transitions.Release;
 
 /**
  * A graphical application to build a classifier.
