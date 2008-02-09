@@ -490,7 +490,9 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		}
 
 		/**
-		 * Returns the location at which this transition has occured in the coordinate system the <b>main container</b>.
+		 * Returns the location at which this transition 
+		 * has occured in the coordinate system of a given component.
+		 * @param c the component defining the coordinate system.
 		 * @return the location at which the mouse event firing this transition has occured.
 		 */
 		public Point2D getPointInComponent(Component c) {

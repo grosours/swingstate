@@ -10,14 +10,15 @@ import java.util.LinkedList;
 
 
 /**
- * A <code>CAndTag</code> is a CTag corresponding to the set of shapes tagged by a <code>CTag t1</code> and a <code>CTag t2</code>.
+ * A <code>CAndTag</code> is a CTag corresponding to the set of shapes tagged 
+ * by a <code>CTag t1</code> and a <code>CTag t2</code>.
  * @author Caroline Appert
  */
 public class CAndTag extends CTag {
 
-	CTag tag1;
-	CTag tag2;
-	CShape next;
+	private CTag tag1;
+	private CTag tag2;
+	private CShape next;
 	
 	/**
 	 * Builds a <code>CAndTag</code>tag corresponding to the set of shapes tagged by a tag t1 and a tag t2.
@@ -53,7 +54,8 @@ public class CAndTag extends CTag {
 	
 	/**
 	 * Returns a collection containing all the shapes tagged by this tag.
-	 * This method uses the iterator of the two tags, thus it mustn't be used while browsing this tag, the tag t1 or the tag t2.
+	 * This method makes use of the iterator of the two tags, 
+	 * thus it must not been used while browsing t1 or t2.
 	 * @return a collection containing all the shapes tagged by this tag.
 	 */
 	public Collection<Object> getCollection() {

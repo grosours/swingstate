@@ -12,7 +12,7 @@ import java.util.LinkedList;
 import javax.swing.Timer;
 
 /**
- * The type used for non default timers (tagged timers).
+ * The type used for timers having a name.
  * @author Caroline Appert
  */
 public class TaggedTimer extends Timer {
@@ -28,6 +28,9 @@ public class TaggedTimer extends Timer {
 		allTags.add(this);
 	}
 
+	/**
+	 * @return The name of this timer.
+	 */
 	public String getTagName() {
 		return tagName;
 	}

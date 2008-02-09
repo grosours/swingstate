@@ -140,8 +140,7 @@ public abstract class Transition {
 				System.err.println("Destination state " 
 						+ e.getStateName()
 						+ " not found in state machine " 
-						+ inputState.getMachine()
-						+ ". Make sure the state is declared public.");
+						+ inputState.getMachine()+".");
 				return null;
 			}
 		}

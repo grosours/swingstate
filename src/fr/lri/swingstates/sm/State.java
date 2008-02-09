@@ -31,18 +31,6 @@ public abstract class State {
 	private String name = null;
 	private LinkedList<Transition> transitions;
 	
-	public void setMachine(StateMachine machine) {
-		this.machine = machine;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public StateMachine getMachine() {
-		return machine;
-	}
-
 	/**
 	 * Builds a new state. 
 	 * The string name of the state, which is used to specify output states in transitions,
@@ -72,6 +60,21 @@ public abstract class State {
 	 */
 	public String getName(){
 		return name;
+	}
+	
+	void setName(String name) {
+		this.name = name;
+	}
+	
+	/**
+	 * @return The state machine to which this state belongs.
+	 */
+	public StateMachine getMachine() {
+		return machine;
+	}
+	
+	void setMachine(StateMachine machine) {
+		this.machine = machine;
 	}
 	
 	/**

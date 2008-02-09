@@ -141,8 +141,9 @@ public abstract class JTag extends Tag {
 	 * Tests if the component <code>c</code> is tagged by a tag of class
 	 * <code>tagClass</code>.
 	 * 
-	 * @param c
-	 *            The component
+	 * @param c The component
+	 * @param tagClass The class of tags
+	 *            
 	 * @return the list of tags of class <code>tagClass</code> that are
 	 *         attached to <code>c</code>.
 	 */
