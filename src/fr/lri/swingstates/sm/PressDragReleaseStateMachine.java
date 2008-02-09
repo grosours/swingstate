@@ -8,16 +8,17 @@ package fr.lri.swingstates.sm;
 
 public abstract class PressDragReleaseStateMachine extends JStateMachine {
 	
-	private int button;
+	private int button, modifier;
 	public State start, move;
 	private double lastX, lastY;
 	
-	public PressDragReleaseStateMachine(int button) {
+	public PressDragReleaseStateMachine(int button, int modifier) {
 		super();
 		this.button = button;
+		this.modifier = modifier;
 		
 		start = new State() {
-			Transition press = new Press(PressDragReleaseStateMachine.this.button, ">> move") {
+			Transition press = new Press(PressDragReleaseStateMachine.this.button, PressDragReleaseStateMachine.this.modifier, ">> move") {
 				public boolean guard() {
 					return PressDragReleaseStateMachine.this.guard(getPoint().getX(), getPoint().getY());
 				}

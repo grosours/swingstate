@@ -952,9 +952,13 @@ public abstract class CTag extends Tag implements CElement {
 	public CElement removeTag(CExtensionalTag t) { 
 		if(t == null) return this;
 		if(t == this) {
+			System.out.println("!!! "+t.getCollection().size());
 			reset(); 
 			while(hasNext()) {
+				System.out.println("removed");
 				t.removed(nextShape());
+				System.out.println(""+t.getCollection().size()+" - "+hasNext());
+//				nextShape();
 			}
 			collection.clear();
 		} else {

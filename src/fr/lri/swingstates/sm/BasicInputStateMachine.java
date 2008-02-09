@@ -85,7 +85,7 @@ public class BasicInputStateMachine extends StateMachine implements MouseListene
 	 */
 	public static final int NOBUTTON = MouseEvent.NOBUTTON;
 	/**
-	 * Specifies that the mouse must any or no button pressed.
+	 * Specifies that the mouse must have any or no button pressed.
 	 */
 	public static final int ANYBUTTON = -1;
 	/**

@@ -157,6 +157,13 @@ public class Canvas extends JPanel implements MouseListener,
 	private Vector<CShape> pickedShapes = new Vector<CShape>();
 
 	/**
+	 * @return all the tags registered on this <code>Canvas</code>.
+	 */
+	public LinkedList<CTag> getAllTags() {
+		return allCanvasTags;
+	}
+
+	/**
 	 * Builds a Canvas.
 	 */
 	public Canvas() {
@@ -804,11 +811,20 @@ public class Canvas extends JPanel implements MouseListener,
 	/**
 	 * Removes a shape from the canvas. Before being removed, the tags of this
 	 * shape are removed, the shape is removed from its hierarchy (its parent
-	 * and children are set to null), and its ghost, if any, is removed.
+	 * and children are set to null), and its ghost, if any, is removed.<br>
+	 * <b>WARNING:</b> Since this method potentially modifies the tags 
+	 * registered on this canvas, be sure to not use it while iterating
+	 * on any of these canvas' tags.
+	 * <br>
+	 * <br>
+	 * Sometimes, it can be more efficient or more convenient to just "hide"
+	 * a shape by using the method <code>setDrawable</code> in class <code>CShape</code>.
 	 * 
 	 * @param shape
-	 *            The shape that have to be deleted.
+	 *            The shape to remove from this canvas.
 	 * @return this canvas.
+	 * 
+	 * @see CShape#setDrawable(boolean)
 	 */
 	public Canvas removeShape(CShape shape) {
 		if (shape == null)

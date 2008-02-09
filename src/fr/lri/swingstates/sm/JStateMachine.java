@@ -2,7 +2,7 @@
  *   Authors: Caroline Appert (caroline.appert@lri.fr)
  *   Copyright (c) Universite Paris-Sud XI, 2007. All Rights Reserved
  *   Licensed under the GNU LGPL. For full terms see the file COPYING.
-*/
+ */
 package fr.lri.swingstates.sm;
 
 import java.awt.Component;
@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import javax.swing.JComponent;
-import javax.swing.JRootPane;
 import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
 
@@ -51,18 +50,21 @@ import fr.lri.swingstates.events.Utils;
  *
  */
 public class JStateMachine extends BasicInputStateMachine implements MouseListener, MouseMotionListener, KeyListener {
-	
+
 	private class JPicker implements Picker {
 
 		private Component  lastPicked = null;
 		private Component  picked     = null;
-		
+		private Point location;
+
 		/**
 		 * Builds a <code>JPicker</code>.
 		 */
-		public JPicker() { }
-		
-		public Component pickAndProcess(JStateMachine machine, Component component, int x, int y) {
+		public JPicker() {
+			location = new Point();
+		}
+
+		public Component pick(JStateMachine machine, Component component, int x, int y) {
 			lastPicked = picked;
 //			With a JStateMachine, the components that are under the glasspane stays reachable 
 //			by input mouse events. That's why we consider the content pane and not the rootpane for picking
@@ -81,38 +83,21 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 						else break;
 					}
 				}
-				
+
 			}
 			Point point = SwingUtilities.convertPoint(
 					component,
 					new Point(x, y),
 					parent);
 			picked = parent.findComponentAt(point);
-			if (lastPicked != picked) {
-				if (lastPicked != null) {
-					Point pt = SwingUtilities.convertPoint(
-							parent,
-							point,
-							lastPicked);
-					machine.processEvent(new PickerEvent(lastPicked, this, MouseEvent.MOUSE_EXITED, 
-							System.currentTimeMillis(), 0, 
-							pt.x, pt.y, 
-							0, false));
-				}
-				if (picked != null) {
-					Point pt = SwingUtilities.convertPoint(
-							parent,
-							point,
-							picked);
-					machine.processEvent(new PickerEvent(picked, this, MouseEvent.MOUSE_ENTERED, 
-							System.currentTimeMillis(), 0, 
-							pt.x, pt.y, 
-							0, false));	
-				}
-			}
+			// TODO Is it necessary? --> I don't think so
+			location = SwingUtilities.convertPoint(
+					component,
+					new Point(x, y),
+					picked);
 			return picked;
 		}
-		
+
 		/**
 		 * @return The previously picked component.
 		 */
@@ -127,23 +112,26 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			return picked;
 		}
 
-		public Point2D getLocation() { return null; }
+		public Point2D getLocation() { 
+//			return null; 
+			return location;
+		}
 
 		public void move(Point2D location) { }
 
 	}
-	
+
 	private LinkedList<Component> components;
-	
+
 	private JPicker picker = new JPicker();
-	
+
 	/**
 	 * Builds a JStateMachine.
 	 */
 	public JStateMachine() {
 		super();
 	}
-	
+
 	/**
 	 * Attaches a component to this state machine. 
 	 * Events coming on this component and its children are catched by this state machine.
@@ -170,7 +158,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		}
 		return this;
 	}
-	
+
 	/**
 	 * Removes a component from the control of this state machine.
 	 * @param c The component to detach.
@@ -190,15 +178,15 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		}
 		return this;
 	}
-	
-	
+
+
 	/**
 	 * @return The <code>Component</code>s monitored by this state machine as a linked list.
 	 */
 	public LinkedList getControlledObjects() {
 		return components;
 	}
-	
+
 	/**
 	 * Adds this state machine as a listener of <code>c</code>
 	 * and all its children.
@@ -212,14 +200,13 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			c.addMouseWheelListener(this);
 			c.addKeyListener(this);
 		}
-//		components.add(c);
 		if(c instanceof Container) {
 			int children = ((Container)c).getComponentCount();
 			for(int i = 0; i < children; i++)
 				register(((Container)c).getComponent(i));
 		}
 	}
-	
+
 	/**
 	 * Removes this state machine as a listener of <code>c</code>
 	 * and all its children.
@@ -237,42 +224,42 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 				unregister(((Container)c).getComponent(i));
 		}
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void mouseClicked(MouseEvent e) {
 		if(!(e instanceof EventFromGlasspane)) doProcessEvent(e);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void mousePressed(MouseEvent e) {
 		if(!(e instanceof EventFromGlasspane)) doProcessEvent(e);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void mouseReleased(MouseEvent e) {
 		if(!(e instanceof EventFromGlasspane)) doProcessEvent(e);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void mouseEntered(MouseEvent e) {
-		// MOUSE_ENTERED and MOUSE_EXITED are fired while picking during a MOUSE_MOVED so we ignore MouseEvent generated by awt
+		if(!(e instanceof EventFromGlasspane)) processEvent(e);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void mouseExited(MouseEvent e) {
-		// MOUSE_ENTERED and MOUSE_EXITED are fired while picking during a MOUSE_MOVED so we ignore MouseEvent generated by awt
+		if(!(e instanceof EventFromGlasspane)) processEvent(e);
 	}
-	
+
 	private Component getGlassPane(Component component) {
 		Container parent = null;
 		if(component instanceof Container) {
@@ -292,119 +279,154 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		}
 		return null;
 	}
-	
+
 	/**
 	 * A mouse event occuring on the glasspane.
 	 * 
 	 * @author Caroline Appert
 	 *
 	 */
-	private class EventFromGlasspane extends MouseEvent {
-		public EventFromGlasspane(Component source, int id, long when, 
+	private class EventFromGlasspane extends MouseWheelEvent {
+		EventFromGlasspane(Component source, int id, long when, int modifiers, int x, int y, int clickCount, boolean popupTrigger, int scrollType, int scrollAmount, int wheelRotation) {
+			super(source, id, when, modifiers, x, y, clickCount, popupTrigger, scrollType,
+					scrollAmount, wheelRotation);
+		}
+		EventFromGlasspane(Component source, int id, long when, 
 				int modifiers, int x, int y, 
 				int clickCount, boolean popupTrigger) {
-			super(source, id, when, modifiers, x, y, clickCount, popupTrigger);
+			super(source, id, when, modifiers, x, y, clickCount, popupTrigger, -1, -1, -1);
 		}
-		public EventFromGlasspane(MouseEvent e) {
+		EventFromGlasspane(MouseEvent e) {
 			this((Component) e.getSource(), e.getID(), e.getWhen(), 
 					e.getModifiers(), e.getX(), e.getY(),
 					e.getClickCount(), e.isPopupTrigger());
 		}
 	}
-	
+
 	private void doProcessEvent(MouseEvent e) {
-		Component picked = picker.pickAndProcess(this, e.getComponent(), e.getX(), e.getY());
-		if(picked == null || picked == e.getComponent()) {
-			processEvent(e);
-		}
+		Component picked = picker.pick(this, e.getComponent(), e.getX(), e.getY());
 		// In awt, the source of a drag is the component where the first mouse pressed occurs
-		// In SwingStates, if it is a drag event, the source is always the component that is under the cursor
-		else {
-			Point eventLocation = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), picked);
-			PickerEvent pickerEvent = e.getID() == MouseEvent.MOUSE_WHEEL ? 
-					new PickerEvent(picked, picker,
-							e.getID(), e.getWhen(), e.getModifiers(),
-							(int)eventLocation.getX(), (int)eventLocation.getY(),
-							e.getClickCount(), e.isPopupTrigger(),
-							((MouseWheelEvent)e).getScrollType(),
-							((MouseWheelEvent)e).getScrollAmount(),
-							((MouseWheelEvent)e).getWheelRotation()) :
-					new PickerEvent(picked, picker,
+		// In a JStateMachine, if it is a drag event, the source is always the component that is under the cursor
+		if(picked != null) {
+			Point eventLocation = getPointRelativeToTopLevel(e);
+			PickerEvent pickerEvent = e.getID() == MouseEvent.MOUSE_WHEEL 
+			? new PickerEvent(picked, picker,
+					e.getID(), e.getWhen(), e.getModifiers(),
+					(int)eventLocation.getX(), (int)eventLocation.getY(),
+					e.getClickCount(), e.isPopupTrigger(),
+					((MouseWheelEvent)e).getScrollType(),
+					((MouseWheelEvent)e).getScrollAmount(),
+					((MouseWheelEvent)e).getWheelRotation())
+			: new PickerEvent(picked, picker,
 					e.getID(), e.getWhen(), e.getModifiers(),
 					(int)eventLocation.getX(), (int)eventLocation.getY(),
 					e.getClickCount(), e.isPopupTrigger());
-					processEvent(pickerEvent);
-					// Redispatch mouse events incoming from glasspane.
-					// Class of redispatched events is EventFromGlasspane
-					// so we filter this type of event in JStateMachine mouse listeners.
-					if(picked != null && picked != e.getComponent() && getGlassPane(e.getComponent()) == e.getComponent()) {
-						picked.dispatchEvent(new EventFromGlasspane(picked,
-								e.getID(), e.getWhen(), e.getModifiers(),
-								(int)eventLocation.getX(), (int)eventLocation.getY(),
-								e.getClickCount(), e.isPopupTrigger()));
-					}
+			processEvent(pickerEvent);
+		}
+		// Redispatch and perform picking for mouse events incoming from glasspane
+		// so the widgets covered by the glasspane still receive events.
+		// (In Swing, a glasspane intercepts all the events)
+		// Class of redispatched events is EventFromGlasspane
+		// so we filter this type of event in JStateMachine mouse listeners.
+		if(picked != null && picked != e.getComponent() && getGlassPane(e.getComponent()) == e.getComponent()) {
+			// process enter/leave
+			if (picker.lastPicked != picked) {
+				if (picker.lastPicked != null) {
+					Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), picker.lastPicked);
+					picker.lastPicked.dispatchEvent(new PickerEvent(picker.lastPicked, picker, MouseEvent.MOUSE_EXITED, 
+							System.currentTimeMillis(), 0, 
+							pt.x, pt.y, 
+							0, false));
+				}
+				if (picked != null) {
+					Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), picked);
+					picked.dispatchEvent(new PickerEvent(picked, picker, MouseEvent.MOUSE_ENTERED, 
+							System.currentTimeMillis(), 0, 
+							pt.x, pt.y, 
+							0, false));	
+				}
+			}
+			// redispatch to deepest component
+			Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), picker.lastPicked);
+			picked.dispatchEvent(
+					e.getID() == MouseEvent.MOUSE_WHEEL 
+					? new EventFromGlasspane(picked,
+							e.getID(), e.getWhen(), e.getModifiers(),
+							(int)pt.getX(), (int)pt.getY(),
+							e.getClickCount(), e.isPopupTrigger(),
+							((MouseWheelEvent)e).getScrollType(),
+							((MouseWheelEvent)e).getScrollAmount(),
+							((MouseWheelEvent)e).getWheelRotation())
+					: new EventFromGlasspane(picked,
+							e.getID(), e.getWhen(), e.getModifiers(),
+							(int)pt.getX(), (int)pt.getY(),
+							e.getClickCount(), e.isPopupTrigger()));
 		}
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void mouseDragged(MouseEvent e) {
-		if(!(e instanceof EventFromGlasspane))  doProcessEvent(e);		
+		if(!(e instanceof EventFromGlasspane)) {
+			doProcessEvent(e);		
+		}
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void mouseMoved(MouseEvent e) {
 		if(!(e instanceof EventFromGlasspane))  doProcessEvent(e);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void keyTyped(KeyEvent e) {
 		processEvent(e);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void keyPressed(KeyEvent e) {
 		processEvent(e);
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public void keyReleased(KeyEvent e) {
 		processEvent(e);
 	}
-	
-	Point2D getPointRelativeToTopLevel(MouseEvent e) {
-		Container parent = null;
-		if(e.getComponent() instanceof Container) {
-			parent = (Container)e.getComponent();
-			while(parent != null) {
-				if(parent instanceof JComponent) {
-					parent = ((JComponent)parent).getTopLevelAncestor();
-					if(parent instanceof JRootPane) parent = ((JRootPane)parent).getContentPane();
-					break;
-				} else {
-					if(parent.getParent() != null) parent = parent.getParent();
-					else break;
-				}
-			}
-			
-		}
+
+	Point getPointRelativeToTopLevel(MouseEvent e) {
+		Container parent = getContentPane(e.getComponent());
 		return SwingUtilities.convertPoint(
 				e.getComponent(),
 				e.getPoint(),
 				parent);
 	}
 	
+	Container getContentPane(Component c) {
+		Container parent = null;
+		if(c instanceof Container) {
+			parent = (Container)c;
+			while(parent != null) {
+				if(parent instanceof RootPaneContainer) {
+					parent = ((RootPaneContainer)parent).getContentPane();
+					break;
+				}
+				if(parent.getParent() != null) parent = parent.getParent();
+				else break;
+			}
+		}
+		return parent;
+	}
+
 	/**
-	 * A transition triggered on a JComponent.
+	 * A transition triggered on a JComponent. 
 	 * OnComponent transitions allow developpers to retrieve the component where this transition has been fired:
 	 *  <pre>
 	 * 	Transition tcomponent = new EventOnComponent("anEvent") {
@@ -418,9 +440,9 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public abstract class EventOnComponent extends EventOnPosition {
-		
+
 		Component component;
-		
+
 		/**
 		 * Builds a transition on a JComponent with no modifier that loops on the current state.
 		 * @param keyEvent The string describing the events for which this transition must be triggered
@@ -428,7 +450,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EventOnComponent(String keyEvent) {
 			super(keyEvent);
 		}
-		
+
 		/**
 		 * Builds a transition on a component with no modifier.
 		 * @param keyEvent The string describing the events for which this transition must be triggered
@@ -437,7 +459,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EventOnComponent(String keyEvent, String outState) {
 			super(keyEvent, outState);
 		}
-		
+
 		/**
 		 * Builds a transition on a JComponent with no modifier that loops on the current state.
 		 * This transition can be triggered by any virtual events
@@ -447,7 +469,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EventOnComponent(Class eventClass) {
 			super(eventClass);
 		}
-		
+
 		/**
 		 * Builds a transition on a component with no modifier.
 		 * This transition can be triggered by any virtual events
@@ -458,7 +480,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EventOnComponent(Class eventClass, String outState) {
 			super(eventClass, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -466,7 +488,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			if(classEvent != null) return "EventOnComponent("+classEvent.getSimpleName()+".class)";
 			else return "EventOnComponent("+event+")";
 		}
-		
+
 		/**
 		 * Returns the component on which the mouse event firing this transition has occured.
 		 * @return the JComponent on which the mouse event firing this transition has occured.
@@ -474,55 +496,41 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public Component getComponent() {
 			return component;
 		}
-		
+
 		/**
-		 * Returns the location at which this transition has occured in the component's coordinate system.
+		 * Returns the location at which this transition has occured in the coordinate system the <b>main container</b>.
 		 * @return the location at which the mouse event firing this transition has occured.
 		 */
-		public Point2D getPointInMainContainer() {
-			Container parent = null;
-			if(component instanceof Container) {
-				parent = (Container)component;
-				while(parent != null) {
-					if(parent instanceof JComponent) {
-						parent = ((JComponent)parent).getTopLevelAncestor();
-						if(parent instanceof JRootPane) parent = ((JRootPane)parent).getContentPane();
-						break;
-					} else {
-						if(parent.getParent() != null) parent = parent.getParent();
-						else break;
-					}
-				}
-				
-			}
+		public Point2D getPointInComponent(Component c) {
 			Point point = SwingUtilities.convertPoint(
-					component,
+					getContentPane(component),
 					new Point((int)getPoint().getX(), (int)getPoint().getY()),
-					parent);
+					c);
 			return point;
 		}
-		
+
 		void setComponent(Component c) {
 			component = c;
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			if(eventObject instanceof MouseEvent) {
 				MouseEvent me = (MouseEvent)eventObject;
-				position = getPointRelativeToTopLevel(me);
+				position = me.getPoint();
 				setComponent(me.getComponent());
 			}
 			if(component == null || !getControlledObjects().contains(component)) return false;
-			return super.matches(eventObject);
+			boolean b =  super.matches(eventObject);
+			return b;
 		}
-		
-		
+
+
 	}
 
-	
+
 	/**
 	 * 
 	 * A Transition triggered when the mouse enters in a JComponent.
@@ -563,7 +571,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnComponent() {
 			super(NOBUTTON, ANYMODIFIER);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -571,16 +579,16 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			boolean b = matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_ENTERED);
 			return b;
 		}
-		
+
 	}
-	
-	
+
+
 	/**
 	 * A transition triggered by a mouse button released on a component.
 	 * @author Caroline Appert
 	 */
 	public class ReleaseOnComponent extends MouseOnComponent {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event with any modifier on a component that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -588,7 +596,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnComponent(int button) {
 			super(button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event on a component that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -597,7 +605,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnComponent(int button, int modifier) {
 			super(button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event with any modifier on a component.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -606,7 +614,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnComponent(int button, String outState) {
 			super(button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event on a component.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -616,14 +624,14 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnComponent(int button, int modifier, String outState) {
 			super(button, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			return matches(eventObject, MouseEvent.MOUSE_RELEASED);
 		}
-		
+
 	}
 
 	/**
@@ -631,7 +639,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class PressOnComponent extends MouseOnComponent {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event with any modifier on a component that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -639,7 +647,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnComponent(int button) {
 			super(button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event on a component that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -648,7 +656,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnComponent(int button, int modifier) {
 			super(button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event with any modifier on a component.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -657,7 +665,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnComponent(int button, String outState) {
 			super(button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event on a component.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -667,7 +675,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnComponent(int button, int modifier, String outState) {
 			super(button, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -681,14 +689,14 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class MoveOnComponent extends MouseOnComponent {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse moved event with mo modifier down on a component that loops on the current state.
 		 */
 		public MoveOnComponent() {
 			super(NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event on a component that loops on the current state.
 		 * @param modifier The modifier: NOMODIFIER, CONTROL, ALT, SHIFT, ALT_CONTROL, CONTROL_SHIFT, ALT_SHIFT or ALT_CONTROL_SHIFT
@@ -696,7 +704,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnComponent(int modifier) {
 			super(NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event with any modifier on a component.
 		 * @param outState The name of the output state
@@ -704,7 +712,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnComponent(String outState) {
 			super(NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event on a component.
 		 * @param modifier The modifier: NOMODIFIER, CONTROL, ALT, SHIFT, ALT_CONTROL, CONTROL_SHIFT, ALT_SHIFT or ALT_CONTROL_SHIFT
@@ -713,14 +721,14 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnComponent(int modifier, String outState) {
 			super(NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			return matches(eventObject, MouseEvent.MOUSE_MOVED);
 		}
-		
+
 	}
 
 	/**
@@ -728,14 +736,14 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class WheelOnComponent extends MouseOnComponent {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event with mo modifier down on a component that loops on the current state.
 		 */
 		public WheelOnComponent() {
 			super(NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event on a component that loops on the current state.
 		 * @param modifier The modifier: NOMODIFIER, CONTROL, ALT, SHIFT, ALT_CONTROL, CONTROL_SHIFT, ALT_SHIFT or ALT_CONTROL_SHIFT
@@ -743,7 +751,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnComponent(int modifier) {
 			super(NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event with any modifier on a component.
 		 * @param outState The name of the output state
@@ -751,7 +759,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnComponent(String outState) {
 			super(NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event on a component.
 		 * @param modifier The modifier: NOMODIFIER, CONTROL, ALT, SHIFT, ALT_CONTROL, CONTROL_SHIFT, ALT_SHIFT or ALT_CONTROL_SHIFT
@@ -760,7 +768,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnComponent(int modifier, String outState) {
 			super(NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * @return the number of units that should be scrolled in response to this event.
 		 * @see java.awt.event.MouseWheelEvent#getScrollAmount()
@@ -768,7 +776,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getScrollAmount() {
 			return ((MouseWheelEvent)triggeringEvent).getScrollAmount();
 		}
-		
+
 		/**
 		 * @return the type of scrolling that should take place in response to this event.
 		 * @see java.awt.event.MouseWheelEvent#getScrollType()
@@ -776,7 +784,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getScrollType() {
 			return ((MouseWheelEvent)triggeringEvent).getScrollType();
 		}
-		
+
 		/**
 		 * @return This is a convenience method to aid in the implementation of the common-case MouseWheelListener 
 		 * - to scroll a ScrollPane or JScrollPane by an amount which conforms to the platform settings.
@@ -785,7 +793,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getUnitsToScroll() {
 			return ((MouseWheelEvent)triggeringEvent).getUnitsToScroll();
 		}
-		
+
 		/**
 		 * @return the number of "clicks" the mouse wheel was rotated.
 		 * @see java.awt.event.MouseWheelEvent#getWheelRotation()
@@ -793,7 +801,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getWheelRotation() {
 			return ((MouseWheelEvent)triggeringEvent).getWheelRotation();
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -802,7 +810,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		}
 	}
 
-	
+
 	/**
 	 * A transition triggered by a mouse event on a component.
 	 * The transition is specified by a button and modifiers.
@@ -810,17 +818,17 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class MouseOnComponent extends EventOnComponent {
-		
+
 		/**
 		 * The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3.
 		 */
 		int button;
-		
+
 		/**
 		 * The modifier: CONTROL, SHIFT, ALT, CONTROL_SHIFT, ALT_SHIFT, ALT_CONTROL, ALT_CONTROL_SHIFT or NOMODIFIER.
 		 */
 		int modifier = ANYMODIFIER;
-		
+
 		/**
 		 * Builds a mouse transition.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -832,7 +840,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.modifier = modifier;
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -843,7 +851,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.modifier = modifier;
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition with any modifier.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -853,7 +861,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super((String)null, outState);
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition with any modifier that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -862,7 +870,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super((String)null);
 			this.button = button;
 		}
-		
+
 		/**
 		 * Returns the button of the mouse event that fires this transition.
 		 * @return the button of the mouse event that fires this transition (NOBUTTON, BUTTON1, BUTTON2 or BUTTON3).
@@ -870,44 +878,42 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getButton(){
 			return button;
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public String toString() {
 			return getClass().getSuperclass().getSimpleName()+"("+Utils.getButtonAsText(button)+","+Utils.getModifiersAsText(modifier)+")";
 		}
-		
+
 		/**
 		 * @return the input event that fires this transition.
 		 */
 		public InputEvent getInputEvent() {
 			return (InputEvent)triggeringEvent;
 		}
-		
+
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
 			triggeringEvent = me;
-//			position = getPointRelativeToTopLevel(me);
 			position = me.getPoint();
 			component = me.getComponent();
 			if(component == null || !getControlledObjects().contains(component)) return false;
 			return (me.getID() == typeEvent)
-				&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER);
+			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER);
 		}
-		
+
 		protected boolean matches(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
 			triggeringEvent = me;
-//			position = getPointRelativeToTopLevel(me);
 			position = me.getPoint();
 			component = me.getComponent();
 			if(component == null || !getControlledObjects().contains(component)) return false;
 			return (me.getID() == typeEvent)
-				&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
-				&& (button == Utils.button(me));
+			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
+			&& (button == Utils.button(me));
 		}
 	}
 
@@ -916,14 +922,14 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class LeaveOnComponent extends MouseOnComponent {
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves with any modifier a component.
 		 */
 		public LeaveOnComponent() {
 			super(NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves a component that loops on the current state.
 		 * @param modifier The modifier: NOMODIFIER, CONTROL, ALT, SHIFT, ALT_CONTROL, CONTROL_SHIFT, ALT_SHIFT or ALT_CONTROL_SHIFT
@@ -931,7 +937,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnComponent(int modifier) {
 			super(NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves with any modifier a component. 
 		 * @param outState The name of the output state
@@ -939,14 +945,14 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnComponent(String outState) {
 			super(NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			return matches(eventObject, MouseEvent.MOUSE_EXITED);
 		}
-		
+
 	}
 
 
@@ -955,7 +961,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class DragOnComponent extends MouseOnComponent {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event with any modifier on a component that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -963,7 +969,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnComponent(int button) {
 			super(button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event on a component that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -972,7 +978,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnComponent(int button, int modifier) {
 			super(button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event with any modifier on a component.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -981,7 +987,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnComponent(int button, String outState) {
 			super(button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event on a component.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -991,15 +997,12 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnComponent(int button, int modifier, String outState) {
 			super(button, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
-			if(matches(eventObject, MouseEvent.MOUSE_DRAGGED)) {
-				return getComponent().contains(new Point((int)getPoint().getX(), (int)getPoint().getY()));
-			}
-			return false;
+			return matches(eventObject, MouseEvent.MOUSE_DRAGGED);
 		}
 	}
 
@@ -1010,7 +1013,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class ClickOnComponent extends MouseOnComponent {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event with any modifier on a component that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -1018,7 +1021,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnComponent(int button) {
 			super(button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event on a component that loops on the current state.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -1027,7 +1030,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnComponent(int button, int modifier) {
 			super(button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event with any modifier on a component.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -1036,7 +1039,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnComponent(int button, String outState) {
 			super(button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event on a component.
 		 * @param button The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3
@@ -1046,17 +1049,17 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnComponent(int button, int modifier, String outState) {
 			super(button, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			return matches(eventObject, MouseEvent.MOUSE_CLICKED);
 		}
-		
+
 	}
-	
-	
+
+
 	/**
 	 * A transition triggered on a tagged component.
 	 * OnTag transitions allow developpers to retrieve the component and the tag where this transition has been fired:
@@ -1125,29 +1128,29 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public abstract class EventOnTag extends EventOnComponent {
-		
+
 		/**
 		 * The tag object.
 		 */
 		JTag tagObject = null;
-		
+
 		/**
 		 * The name of the tag.
 		 */
 		String tagName = null;
-		
+
 		/**
 		 * The class of the tag.
 		 */
 		Class tagClass = null;
-		
+
 		/**
 		 * If the tag is mentioned by its name or not. 
 		 */
 		boolean isNamed = false;
-		
+
 		boolean isDesignedByClass = false;
-		
+
 		/**
 		 * Builds a transition with any modifier on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -1157,7 +1160,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super(keyEvent);
 			tagObject = tag;
 		}
-		
+
 		/**
 		 * Builds a transition with any modifier on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -1168,7 +1171,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.tagClass = tagClass;
 			isDesignedByClass = true;
 		}
-		
+
 		/**
 		 * Builds a transition with any modifier on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -1191,7 +1194,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.tagName = tagName;
 			isNamed = true;
 		}
-		
+
 		/**
 		 * Builds a transition with any modifier on a tagged component.
 		 * @param tagClass The class of the tag
@@ -1203,7 +1206,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.tagClass = tagClass;
 			isDesignedByClass = true;
 		}
-		
+
 		/**
 		 * Builds a transition with any modifier on a tagged component.
 		 * @param tag The tag
@@ -1214,7 +1217,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super(keyEvent, outState);
 			tagObject = tag;
 		}
-		
+
 		/**
 		 * Returns the name of the tag attached to the component on which the mouse event firing this transition has occured.
 		 * @return name of the tag.
@@ -1222,7 +1225,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public String getTagName() {
 			return tagName;
 		}
-		
+
 		/**
 		 * Returns the tag instance attached to the JComponent on which the mouse event firing this transition has occured.
 		 * @return the tag instance.
@@ -1230,19 +1233,19 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public JTag getTag() {
 			return tagObject;
 		}
-		
+
 		void setTagObject(JTag tag) {
 			tagObject = tag;
 		}
-		
+
 		void setTagClass(Class tagClass) {
 			this.tagClass = tagClass;
 		}
-		
+
 		void setTagName(String tagName) {
 			this.tagName = tagName;
 		}
-		
+
 		protected boolean matches() {
 			JTag tg = getTag();
 			boolean hasTested = false;
@@ -1274,7 +1277,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 						if(tg == null)
 							tg = new JNamedTag(tagName);
 					}
-					
+
 					Class cls;
 					try {
 						cls = Class.forName(tagName);
@@ -1286,7 +1289,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 					} catch (ClassNotFoundException e) {
 						;
 					}
-					
+
 					setTagObject(tg);
 					setTagClass(tg.getClass());
 				}
@@ -1305,7 +1308,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			}
 			return false;	
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -1318,16 +1321,16 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 				else return "EventOnTag("+tagObject+", "+evt+")";
 			}
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			return super.matches(eventObject) && matches();
 		}
-		
+
 	}	
-	
+
 	/**
 	 * A transition triggered by a mouse event on a tagged component.
 	 * The transition is specified by a button and modifiers.
@@ -1335,17 +1338,17 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class MouseOnTag extends EventOnTag {
-		
+
 		/**
 		 * The button of the mouse event: NOBUTTON, BUTTON1, BUTTON2 or BUTTON3.
 		 */
 		int button;
-		
+
 		/**
 		 * The modifier: CONTROL, SHIFT, ALT, CONTROL_SHIFT, ALT_SHIFT, ALT_CONTROL, ALT_CONTROL_SHIFT or NOMODIFIER.
 		 */
 		int modifier = ANYMODIFIER;
-		
+
 		/**
 		 * Builds a mouse transition on tagged component.
 		 * @param tag The tag
@@ -1358,7 +1361,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.modifier = modifier;
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition on tagged component that loops on the current state.
 		 * @param tag The tag
@@ -1370,7 +1373,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.modifier = modifier;
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition with no modifier on tagged component.
 		 * @param tag The tag
@@ -1381,7 +1384,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super(tag, (String)null, outState);
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition with no modifier on tagged component that loops on the current state.
 		 * @param tag The tag
@@ -1391,7 +1394,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super(tag, (String)null);
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition on tagged component.
 		 * @param tagName The name of the tag
@@ -1404,7 +1407,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.modifier = modifier;
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition on tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -1416,7 +1419,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.modifier = modifier;
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition with no modifier on tagged component.
 		 * @param tagName The name of the tag
@@ -1427,7 +1430,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super(tagName, (String)null, outState);
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition with no modifier on tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -1437,7 +1440,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super(tagName, (String)null);
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition on tagged component.
 		 * @param tagClass The class of the tag
@@ -1450,7 +1453,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.modifier = modifier;
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition on tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -1462,7 +1465,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.modifier = modifier;
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition with no modifier on tagged component.
 		 * @param tagClass The class of the tag
@@ -1473,7 +1476,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super(tagClass, (String)null, outState);
 			this.button = button;
 		}
-		
+
 		/**
 		 * Builds a mouse transition with no modifier on tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -1483,8 +1486,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			super(tagClass, (String)null);
 			this.button = button;
 		}
-		
-		
+
+
 		/**
 		 * Returns the button of the mouse event that fires this transition.
 		 * @return the button of the mouse event that fires this transition (NOBUTTON, BUTTON1, BUTTON2 or BUTTON3).
@@ -1492,7 +1495,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getButton(){
 			return button;
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -1505,41 +1508,39 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 				else return getClass().getSuperclass().getSimpleName()+"("+tagObject+", "+Utils.getButtonAsText(button)+","+Utils.getModifiersAsText(modifier)+","+evt+")";
 			}
 		}
-		
+
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
 			triggeringEvent = me;
-//			position = getPointRelativeToTopLevel(me);
 			position = me.getPoint();
 			component = me.getComponent();
 			if(component == null || !getControlledObjects().contains(component)) return false;
 			return (me.getID() == typeEvent)
-				&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
-				&& matches();
+			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
+			&& matches();
 		}
-		
+
 		protected boolean matches(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
 			triggeringEvent = me;
-//			position = getPointRelativeToTopLevel(me);
 			position = me.getPoint();
 			component = me.getComponent();
 			if(component == null || !getControlledObjects().contains(component)) return false;
 			return (me.getID() == typeEvent)
-				&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
-				&& (button == Utils.button(me))
-				&& matches();
+			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
+			&& (button == Utils.button(me))
+			&& matches();
 		}
 	}
-	
+
 	/**
 	 * A transition triggered when the cursor enters in a component with a given tag.
 	 * @author Caroline Appert
 	 */
 	public class EnterOnTag extends MouseOnTag {
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters with any modifier in a tagged component. This transition loops on the current state.
 		 * @param tagName The name of the tag 
@@ -1547,7 +1548,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(String tagName) {
 			super(tagName,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters with any modifier in a tagged component. This transition loops on the current state.
 		 * @param tagClass The class of the tag 
@@ -1555,7 +1556,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(Class tagClass) {
 			super(tagClass,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters with any modifier in a tagged component. This transition loops on the current state.
 		 * @param tag The tag 
@@ -1563,7 +1564,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(JTag tag) {
 			super(tag,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters in a tagged component. This transition loops on the current state.
 		 * @param tagName The name of the tag 
@@ -1572,7 +1573,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(String tagName, int modifier) {
 			super(tagName,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters with any modifier in a tagged component. This transition loops on the current state.
 		 * @param tagClass The class of the tag 
@@ -1581,7 +1582,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(Class tagClass, int modifier) {
 			super(tagClass,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters in a tagged component. This transition loops on the current state.
 		 * @param tag The tag 
@@ -1590,7 +1591,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(JTag tag, int modifier) {
 			super(tag,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters with any modifier in a tagged component.
 		 * @param tagName The name of the tag 
@@ -1599,7 +1600,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(String tagName, String outState) {
 			super(tagName,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters with any modifier in a tagged component.
 		 * @param tagClass The class of the tag 
@@ -1608,8 +1609,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(Class tagClass, String outState) {
 			super(tagClass,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
-		
+
+
 		/**
 		 * Builds a transition triggered when the cursor enters with any modifier in a tagged component.
 		 * @param tag The tag 
@@ -1618,7 +1619,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(JTag tag, String outState) {
 			super(tag,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters in a tagged component.
 		 * @param tagName The name of the tag 
@@ -1628,7 +1629,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(String tagName, int modifier, String outState) {
 			super(tagName,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters in a tagged component.
 		 * @param tagClass The class of the tag 
@@ -1638,7 +1639,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(Class tagClass, int modifier, String outState) {
 			super(tagClass,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor enters in a tagged component.
 		 * @param tag The tag 
@@ -1648,22 +1649,22 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public EnterOnTag(JTag tag, int modifier, String outState) {
 			super(tag,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			return matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_ENTERED);
 		}
-		
+
 	}
-	
+
 	/**
 	 * A transition triggered when the cursor leaves a component with a given tag.
 	 * @author Caroline Appert
 	 */
 	public class LeaveOnTag extends MouseOnTag {
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves with any modifier a tagged component. This transition loops on the current state.
 		 * @param tagName The name of the tag 
@@ -1671,7 +1672,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(String tagName) {
 			super(tagName,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves with any modifier a tagged component. This transition loops on the current state.
 		 * @param tagClass The class of the tag 
@@ -1679,7 +1680,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(Class tagClass) {
 			super(tagClass,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves with any modifier a tagged component. This transition loops on the current state.
 		 * @param tag The tag 
@@ -1687,7 +1688,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(JTag tag) {
 			super(tag,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves a tagged component. This transition loops on the current state.
 		 * @param tagName The name of the tag 
@@ -1696,7 +1697,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(String tagName, int modifier) {
 			super(tagName,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves a tagged component. This transition loops on the current state.
 		 * @param tagClass The class of the tag 
@@ -1705,7 +1706,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(Class tagClass, int modifier) {
 			super(tagClass,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves a tagged component. This transition loops on the current state.
 		 * @param tag The tag 
@@ -1714,7 +1715,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(JTag tag, int modifier) {
 			super(tag,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves with any modifier a tagged component.
 		 * @param tagName The name of the tag 
@@ -1723,7 +1724,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(String tagName, String outState) {
 			super(tagName,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves with any modifier a tagged component.
 		 * @param tagClass The class of the tag 
@@ -1732,7 +1733,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(Class tagClass, String outState) {
 			super(tagClass,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves with any modifier a tagged component.
 		 * @param tag The tag 
@@ -1741,8 +1742,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(JTag tag, String outState) {
 			super(tag,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
-		
+
+
 		/**
 		 * Builds a transition triggered when the cursor leaves a tagged component.
 		 * @param tagName The name of the tag 
@@ -1752,7 +1753,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(String tagName, int modifier, String outState) {
 			super(tagName,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves a tagged component.
 		 * @param tagClass The class of the tag 
@@ -1762,7 +1763,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(Class tagClass, int modifier, String outState) {
 			super(tagClass, NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered when the cursor leaves a tagged component.
 		 * @param tag The tag 
@@ -1772,7 +1773,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public LeaveOnTag(JTag tag, int modifier, String outState) {
 			super(tag, NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -1780,14 +1781,14 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			return matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_EXITED);
 		}
 	}
-	
-	
+
+
 	/**
 	 * A transition triggered by a mouse pressed event on a component with a given tag.
 	 * @author Caroline Appert
 	 */
 	public class PressOnTag extends MouseOnTag {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event with any modifier on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag 
@@ -1796,7 +1797,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(String tagName, int button) {
 			super(tagName,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event with any modifier on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag 
@@ -1805,7 +1806,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(Class tagClass, int button) {
 			super(tagClass,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event with any modifier on a tagged component that loops on the current state.
 		 * @param tag The tag 
@@ -1814,7 +1815,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(JTag tag, int button) {
 			super(tag,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag 
@@ -1824,7 +1825,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(String tagName, int button, int modifier) {
 			super(tagName,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag 
@@ -1834,7 +1835,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(Class tagClass, int button, int modifier) {
 			super(tagClass,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event on a tagged component that loops on the current state.
 		 * @param tag The tag 
@@ -1844,7 +1845,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(JTag tag, int button, int modifier) {
 			super(tag,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event with any modifier on a tagged component.
 		 * @param tagName The name of the tag 
@@ -1854,7 +1855,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(String tagName, int button, String outState) {
 			super(tagName,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event with any modifier on a tagged component.
 		 * @param tagClass The class of the tag 
@@ -1864,7 +1865,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(Class tagClass, int button, String outState) {
 			super(tagClass,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event with any modifier on a tagged component.
 		 * @param tag The tag 
@@ -1874,8 +1875,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(JTag tag, int button, String outState) {
 			super(tag,  button, ANYMODIFIER, outState);
 		}
-		
-		
+
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event on a tagged component.
 		 * @param tagName The name of the tag 
@@ -1886,7 +1887,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(String tagName, int button, int modifier, String outState) {
 			super(tagName, button, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event on a tagged component.
 		 * @param tagClass The class of the tag 
@@ -1897,7 +1898,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(Class tagClass, int button, int modifier, String outState) {
 			super(tagClass, button, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse pressed event on a tagged component.
 		 * @param tag The tag 
@@ -1908,7 +1909,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public PressOnTag(JTag tag, int button, int modifier, String outState) {
 			super(tag,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -1916,13 +1917,13 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			return matches(eventObject, MouseEvent.MOUSE_PRESSED);
 		}
 	}
-	
+
 	/**
 	 * A transition triggered by a mouse released event on a component with a given tag.
 	 * @author Caroline Appert
 	 */
 	public class ReleaseOnTag extends MouseOnTag {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event with any modifier on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -1931,7 +1932,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(String tagName, int button) {
 			super(tagName,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event with any modifier on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -1940,7 +1941,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(Class tagClass, int button) {
 			super(tagClass,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event with any modifier on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -1949,7 +1950,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(JTag tag, int button) {
 			super(tag,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -1959,7 +1960,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(String tagName, int button, int modifier) {
 			super(tagName,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -1969,7 +1970,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(Class tagClass, int button, int modifier) {
 			super(tagClass,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -1979,7 +1980,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(JTag tag, int button, int modifier) {
 			super(tag,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event with any modifier on a tagged component.
 		 * @param tagName The name of the tag
@@ -1989,7 +1990,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(String tagName, int button, String outState) {
 			super(tagName,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event with any modifier on a tagged component.
 		 * @param tagClass The class of the tag
@@ -1999,7 +2000,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(Class tagClass, int button, String outState) {
 			super(tagClass,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event with any modifier on a tagged component.
 		 * @param tag The tag
@@ -2009,8 +2010,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(JTag tag, int button, String outState) {
 			super(tag,  button, ANYMODIFIER, outState);
 		}
-		
-		
+
+
 		/**
 		 * Builds a transition triggered by a mouse released event on a tagged component.
 		 * @param tagName The name of the tag
@@ -2021,7 +2022,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(String tagName, int button, int modifier, String outState) {
 			super(tagName,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event on a tagged component.
 		 * @param tagClass The class of the tag
@@ -2032,7 +2033,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(Class tagClass, int button, int modifier, String outState) {
 			super(tagClass,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse released event on a tagged component.
 		 * @param tag The tag
@@ -2043,7 +2044,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ReleaseOnTag(JTag tag, int button, int modifier, String outState) {
 			super(tag,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -2051,7 +2052,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			return matches(eventObject, MouseEvent.MOUSE_RELEASED);
 		}
 	}
-	
+
 	/**
 	 * A transition triggered by a mouse clicked event on a component with a given tag.
 	 * A click is defined as a quick succession of mouse press and mouse release, without significant motion in between.
@@ -2059,7 +2060,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 * @author Caroline Appert
 	 */
 	public class ClickOnTag extends MouseOnTag {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event with any modifier on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -2068,7 +2069,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(String tagName, int button) {
 			super(tagName,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event with any modifier on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -2077,7 +2078,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(Class tagClass, int button) {
 			super(tagClass,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event with any modifier on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -2086,7 +2087,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(JTag tag, int button) {
 			super(tag,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -2096,7 +2097,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(String tagName, int button, int modifier) {
 			super(tagName,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -2106,7 +2107,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(Class tagClass, int button, int modifier) {
 			super(tagClass,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -2116,7 +2117,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(JTag tag, int button, int modifier) {
 			super(tag,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event with any modifier on a tagged component.
 		 * @param tagName The name of the tag
@@ -2126,7 +2127,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(String tagName, int button, String outState) {
 			super(tagName,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event with any modifier on a tagged component.
 		 * @param tagClass The class of the tag
@@ -2136,7 +2137,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(Class tagClass, int button, String outState) {
 			super(tagClass,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event with any modifier on a tagged component.
 		 * @param tag The tag
@@ -2146,7 +2147,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(JTag tag, int button, String outState) {
 			super(tag,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event on a tagged component.
 		 * @param tagName The name of the tag
@@ -2157,7 +2158,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(String tagName, int button, int modifier, String outState) {
 			super(tagName,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event on a tagged component.
 		 * @param tagClass The class of the tag
@@ -2168,7 +2169,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(Class tagClass, int button, int modifier, String outState) {
 			super(tagClass,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse clicked event on a tagged component.
 		 * @param tag The tag
@@ -2179,22 +2180,22 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public ClickOnTag(JTag tag, int button, int modifier, String outState) {
 			super(tag,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			return matches(eventObject, MouseEvent.MOUSE_CLICKED);
 		}
-		
+
 	}
-	
+
 	/**
 	 * A transition triggered by a mouse moved event with a button pressed on a component with a given tag.
 	 * @author Caroline Appert
 	 */
 	public class DragOnTag extends MouseOnTag {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event with any modifier on a component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -2203,7 +2204,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(String tagName, int button) {
 			super(tagName,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event with any modifier on a component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -2212,7 +2213,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(Class tagClass, int button) {
 			super(tagClass,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event with any modifier on a component that loops on the current state.
 		 * @param tag The tag
@@ -2221,7 +2222,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(JTag tag, int button) {
 			super(tag,  button);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event on a component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -2231,7 +2232,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(String tagName, int button, int modifier) {
 			super(tagName,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event on a component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -2241,7 +2242,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(Class tagClass, int button, int modifier) {
 			super(tagClass,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event on a component that loops on the current state.
 		 * @param tag The tag
@@ -2251,7 +2252,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(JTag tag, int button, int modifier) {
 			super(tag,  button, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event with any modifier on a component.
 		 * @param tagName The name of the tag
@@ -2261,7 +2262,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(String tagName, int button, String outState) {
 			super(tagName,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event with any modifier on a component.
 		 * @param tagClass The class of the tag
@@ -2271,7 +2272,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(Class tagClass, int button, String outState) {
 			super(tagClass,  button, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event with any modifier on a component.
 		 * @param tag The tag
@@ -2281,8 +2282,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(JTag tag, int button, String outState) {
 			super(tag,  button, ANYMODIFIER, outState);
 		}
-		
-		
+
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event on a component.
 		 * @param tagName The name of the tag
@@ -2293,7 +2294,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(String tagName, int button, int modifier, String outState) {
 			super(tagName,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event on a component.
 		 * @param tagClass The class of the tag
@@ -2304,7 +2305,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(Class tagClass, int button, int modifier, String outState) {
 			super(tagClass,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse dragged event on a component.
 		 * @param tag The tag
@@ -2315,24 +2316,21 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public DragOnTag(JTag tag, int button, int modifier, String outState) {
 			super(tag,  button, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
-			if(matches(eventObject, MouseEvent.MOUSE_DRAGGED)) {
-				return getComponent().contains(new Point((int)getPoint().getX(), (int)getPoint().getY()));
-			}
-			return false;
+			return matches(eventObject, MouseEvent.MOUSE_DRAGGED);
 		}
 	}
-	
+
 	/**
 	 * A transition triggered by a mouse moved event with no button pressed on a component with a given tag.
 	 * @author Caroline Appert
 	 */
 	public class MoveOnTag extends MouseOnTag {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event with any modifier on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -2340,7 +2338,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(String tagName) {
 			super(tagName,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event with any modifier on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -2348,7 +2346,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(Class tagClass) {
 			super(tagClass,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event with any modifier on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -2356,7 +2354,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(JTag tag) {
 			super(tag,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -2365,7 +2363,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(String tagName, int modifier) {
 			super(tagName,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -2374,7 +2372,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(Class tagClass, int modifier) {
 			super(tagClass,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -2383,7 +2381,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(JTag tag, int modifier) {
 			super(tag,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event with any modifier on a tagged component.
 		 * @param tagName The name of the tag
@@ -2392,7 +2390,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(String tagName, String outState) {
 			super(tagName,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event with any modifier on a tagged component.
 		 * @param tagClass The class of the tag
@@ -2401,7 +2399,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(Class tagClass, String outState) {
 			super(tagClass,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event with any modifier on a tagged component.
 		 * @param tag The tag
@@ -2410,7 +2408,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(JTag tag, String outState) {
 			super(tag,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event on a tagged component.
 		 * @param tagName The name of the tag
@@ -2420,7 +2418,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(String tagName, int modifier, String outState) {
 			super(tagName,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event on a tagged component.
 		 * @param tagClass The class of the tag
@@ -2430,7 +2428,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(Class tagClass, int modifier, String outState) {
 			super(tagClass,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event on a tagged component.
 		 * @param tag The tag
@@ -2440,22 +2438,22 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public MoveOnTag(JTag tag, int modifier, String outState) {
 			super(tag,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
 			return matches(eventObject, MouseEvent.MOUSE_MOVED);
 		}
-		
+
 	}
-	
+
 	/**
 	 * A transition triggered by a mouse wheel event with no button pressed on a component with a given tag.
 	 * @author Caroline Appert
 	 */
 	public class WheelOnTag extends MouseOnTag {
-		
+
 		/**
 		 * Builds a transition triggered by a mouse motion event with any modifier on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -2463,7 +2461,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(String tagName) {
 			super(tagName,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event with any modifier on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -2471,7 +2469,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(Class tagClass) {
 			super(tagClass,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event with any modifier on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -2479,7 +2477,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(JTag tag) {
 			super(tag,  NOBUTTON);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event on a tagged component that loops on the current state.
 		 * @param tagName The name of the tag
@@ -2488,7 +2486,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(String tagName, int modifier) {
 			super(tagName,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event on a tagged component that loops on the current state.
 		 * @param tagClass The class of the tag
@@ -2497,7 +2495,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(Class tagClass, int modifier) {
 			super(tagClass,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event on a tagged component that loops on the current state.
 		 * @param tag The tag
@@ -2506,7 +2504,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(JTag tag, int modifier) {
 			super(tag,  NOBUTTON, modifier);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event with any modifier on a tagged component.
 		 * @param tagName The name of the tag
@@ -2515,7 +2513,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(String tagName, String outState) {
 			super(tagName,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event with any modifier on a tagged component.
 		 * @param tagClass The class of the tag
@@ -2524,7 +2522,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(Class tagClass, String outState) {
 			super(tagClass,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event with any modifier on a tagged component.
 		 * @param tag The tag
@@ -2533,7 +2531,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(JTag tag, String outState) {
 			super(tag,  NOBUTTON, ANYMODIFIER, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event on a tagged component.
 		 * @param tagName The name of the tag
@@ -2543,7 +2541,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(String tagName, int modifier, String outState) {
 			super(tagName,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event on a tagged component.
 		 * @param tagClass The class of the tag
@@ -2553,7 +2551,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(Class tagClass, int modifier, String outState) {
 			super(tagClass,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * Builds a transition triggered by a mouse wheel event on a tagged component.
 		 * @param tag The tag
@@ -2563,7 +2561,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public WheelOnTag(JTag tag, int modifier, String outState) {
 			super(tag,  NOBUTTON, modifier, outState);
 		}
-		
+
 		/**
 		 * @return the number of units that should be scrolled in response to this event.
 		 * @see java.awt.event.MouseWheelEvent#getScrollAmount()
@@ -2571,7 +2569,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getScrollAmount() {
 			return ((MouseWheelEvent)triggeringEvent).getScrollAmount();
 		}
-		
+
 		/**
 		 * @return the type of scrolling that should take place in response to this event.
 		 * @see java.awt.event.MouseWheelEvent#getScrollType()
@@ -2579,7 +2577,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getScrollType() {
 			return ((MouseWheelEvent)triggeringEvent).getScrollType();
 		}
-		
+
 		/**
 		 * @return This is a convenience method to aid in the implementation of the common-case MouseWheelListener 
 		 * - to scroll a ScrollPane or JScrollPane by an amount which conforms to the platform settings.
@@ -2588,7 +2586,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getUnitsToScroll() {
 			return ((MouseWheelEvent)triggeringEvent).getUnitsToScroll();
 		}
-		
+
 		/**
 		 * @return the number of "clicks" the mouse wheel was rotated.
 		 * @see java.awt.event.MouseWheelEvent#getWheelRotation()
@@ -2596,7 +2594,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public int getWheelRotation() {
 			return ((MouseWheelEvent)triggeringEvent).getWheelRotation();
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -2604,5 +2602,5 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			return matches(eventObject, MouseEvent.MOUSE_WHEEL);
 		}
 	}
-	
+
 }

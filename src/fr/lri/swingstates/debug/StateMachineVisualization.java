@@ -405,7 +405,7 @@ public class StateMachineVisualization extends Canvas {
 
 	private void init(){
 		// State names are initialized when at least one transition has been fired
-		smToVisualize.addStateMachineListener(new StateMachineEventAdapter(){
+		smToVisualize.addStateMachineListener(new StateMachineEventListener(){
 			public void smInited(StateMachineEvent e){
 				if(first) { first = false; drawSM(); }
 			}
@@ -419,6 +419,18 @@ public class StateMachineVisualization extends Canvas {
 				if(first) { first = false; drawSM(); }
 				hilite(e.getCurrentState(), e.getTransition());
 				repaint();
+			}
+			
+			public void smReset(StateMachineEvent e) { }
+			
+			public void smResumed(StateMachineEvent e) {
+				StateMachineVisualization.this.setTransparencyFill(1);
+				StateMachineVisualization.this.setTransparencyOutline(1);
+			}
+			
+			public void smSuspended(StateMachineEvent e) {
+				StateMachineVisualization.this.setTransparencyFill(.5f);
+				StateMachineVisualization.this.setTransparencyOutline(.5f);
 			}
 
 		});

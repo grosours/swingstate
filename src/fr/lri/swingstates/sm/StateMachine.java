@@ -194,7 +194,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * The initial state is the first state in the order of the declarations.
 	 * @return this state machine.
 	 */
-	public final StateMachine reset(){
+	public StateMachine reset(){
 		if (this.watcher != null) this.watcher.fireSmReset(this.getCurrentState());
 		this.doReset();
 		this.currentState = this.initialState;
@@ -221,7 +221,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * Makes this state machine inactive.
 	 * When a state machine is inactive, it does not process events.
 	 */
-	public final void suspend() {
+	public void suspend() {
 		if(this.active) this.doSuspend();
 		this.active = false;
 		if(this.watcher != null) this.watcher.fireSmSuspended();
@@ -233,7 +233,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * @see StateMachine#resume()
 	 * @see StateMachine#suspend()
 	 */
-	public final void setActive(boolean active) {
+	public void setActive(boolean active) {
 		if(active) this.resume();
 		else this.suspend();
 	}
@@ -420,7 +420,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 		processEvent(new VirtualEvent(event));
 	}
 	
-	private Transition fireTransition(EventObject event) {
+	protected Transition fireTransition(EventObject event) {
 		LinkedList<Transition> trans = currentState.transitions;
 		Transition hasFired = null;
 		if(trans!=null){
@@ -464,7 +464,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * @param t the transition to fire
 	 * @return true if the transition was fired, false otherwise
 	 */
-	protected final boolean fireTransition (State.Transition t) {
+	protected boolean fireTransition (State.Transition t) {
 		if (! t.guard()) {
 			return false;
 		}
@@ -682,7 +682,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * that triggers this transition.
 			 * @param outState The name of the output state
 			 */
-			protected Transition(final String outState) {
+			protected Transition(String outState) {
 				setOutputStateName(outState);
 				addTransition();
 			}
@@ -728,7 +728,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			/**
 			 * Adds this transition to the enclosing state.
 			 */
-			protected final void addTransition() {
+			protected void addTransition() {
 				ArrayList<String> transitionsAfter = mustBeBefore();
 				if(transitionsAfter == null) transitions.add(this);
 				else {
@@ -743,7 +743,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			/**
 			 * Removes this transition to the enclosing state.
 			 */
-			protected final void removeTransition() {
+			protected void removeTransition() {
 				transitions.remove(this);
 			}
 			
@@ -751,7 +751,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * Sets the name of the output state of this transition.
 			 * @param outState The name of the output state
 			 */
-			protected final void setOutputStateName(final String outState) {
+			protected void setOutputStateName(String outState) {
 				/* 
 				 * trim leading chars: '-=> ' 
 				 * so we can write the destination state as
@@ -770,7 +770,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			/**
 			 * @return the output state of this transition.
 			 */
-			public final State getOutputState() {
+			public State getOutputState() {
 				if (outputStateName == null) {
 					// a null output state means we stay in the same state
 					// => we don't call leave/enter
@@ -794,7 +794,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			/**
 			 * @return the input state of this transition.
 			 */
-			public final State getInputState() {
+			public State getInputState() {
 				return State.this;
 			}
 			
@@ -813,7 +813,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * @return The default string that would be returned 
 			 * by java.lang.Object.toString().
 			 */
-			public final String oldToString() {
+			public String oldToString() {
 				return super.toString();
 			}
 			
@@ -850,7 +850,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * @return the virtual event that has just been received, 
 			 * null if this transition is not fired by a virtual event.
 			 */
-			public final EventObject getEvent() {
+			public EventObject getEvent() {
 				return triggeringEvent;
 			}
 			
@@ -906,7 +906,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 		 * @author Caroline Appert
 		 */
 		
-		public class Event extends Transition {
+		public class Event<E> extends Transition {
 			
 			protected Class<?> classEvent = null;
 			
@@ -920,7 +920,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * @param keyEvent The event that triggers this transition
 			 * @param outputState The name of the output state
 			 */
-			public Event(final String keyEvent, final String outputState) {
+			public Event(String keyEvent, String outputState) {
 				super(outputState);
 				event = keyEvent;
 			}
@@ -930,7 +930,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * that loops on current state.
 			 * @param keyEvent The event that triggers this transition
 			 */
-			public Event(final String keyEvent) {
+			public Event(String keyEvent) {
 				super();
 				event = keyEvent;
 			}
@@ -942,7 +942,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * @param eventClass The class of events
 			 * @param outputState The name of the output state
 			 */
-			public Event(final Class eventClass, final String outputState) {
+			public Event(Class eventClass, String outputState) {
 				super(outputState);
 				classEvent = eventClass;
 			}
@@ -953,7 +953,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * whose type is a subclass of <code>eventClass</code>.
 			 * @param eventClass The class of events
 			 */
-			public Event(final Class eventClass) {
+			public Event(Class eventClass) {
 				super();
 				classEvent = eventClass;
 			}
@@ -1005,7 +1005,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * Builds a transition triggered by a timer event.
 			 * @param outState The name of the output state
 			 */
-			public TimeOut(final String outState) {
+			public TimeOut(String outState) {
 				super(TIME_OUT, outState);
 			}
 			
@@ -1041,7 +1041,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 			 * @param tag the tag of the timer.
 			 * @param outState The name of the output state
 			 */
-			public TaggedTimeOut(String tag, final String outState) {
+			public TaggedTimeOut(String tag, String outState) {
 				super(outState);
 				this.tag = tag;
 			}

@@ -89,10 +89,11 @@ class JoystickTextField {
 			
 			Transition press = new PressOnTag("javax.swing.JTextField", BUTTON1, ">> control") {
 				public void action() {
-					ptInit = getPointInMainContainer();
+//					ptInit = getPointInMainContainer();
+					ptInit = getPoint();
 					textRate.setText("0");
 					ink.setPoints(ptInit, ptInit).setDrawable(true);
-					textRate.translateTo(10 + getPointInMainContainer().getX(), 25 + getPointInMainContainer().getY()).setDrawable(true);
+					textRate.translateTo(10 + ptInit.getX(), 25 + ptInit.getY()).setDrawable(true);
 					currentValue = Integer.parseInt(activeTextField.getText());
 				}
 			};
@@ -104,12 +105,14 @@ class JoystickTextField {
 			Transition drag = new DragOnComponent(BUTTON1) {
 				public void action() {
 					disarmTimer();
-					rate = (int)ptInit.distance(getPointInMainContainer())/3;
-					if(getPoint().getY() > ptInit.getY())
+//					Point2D pt = getPointInMainContainer();
+					Point2D pt = getPoint();
+					rate = (int)ptInit.distance(pt)/3;
+					if(pt.getY() > ptInit.getY())
 						rate = -rate;
 					activeTextField.setText(""+(Integer.parseInt(activeTextField.getText())+rate));
-					textRate.setText(""+rate).translateTo(10 + getPointInMainContainer().getX(), 25 + getPointInMainContainer().getY());
-					ink.setPoints(ptInit, getPointInMainContainer());
+					textRate.setText(""+rate).translateTo(10 + pt.getX(), 25 + pt.getY());
+					ink.setPoints(ptInit, pt);
 					armTimer(200, true);
 				}
 			};

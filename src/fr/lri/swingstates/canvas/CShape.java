@@ -1953,12 +1953,33 @@ public class CShape implements Cloneable, CElement {
 
 	/**
 	 * Creates a new copy of this shape and returns it.
+	 * The tags of this shape are not added to the copy.
 	 * 
 	 * @return the copy.
+	 * @see CShape#duplicateWithTags()
 	 */
 	public CShape duplicate() {
 		CShape sms = new CShape();
 		copyTo(sms);
+		return sms;
+	}
+	
+	/**
+	 * Creates a new copy of this shape and returns it.
+	 * The tags of this shape are added to the copy.
+	 * 
+	 * @return the copy.
+	 * @see CShape#duplicate()
+	 */
+	public CShape duplicateWithTags() {
+		CShape sms = duplicate();
+		if(getCanvas() != null) {
+			for(Iterator<CTag> iterator = getCanvas().getAllTags().iterator(); iterator.hasNext(); ) {
+				CTag next = iterator.next();
+				if(next instanceof CExtensionalTag && next.tagsShape(this))
+					sms.addTag((CExtensionalTag)next);
+			}
+		}
 		return sms;
 	}
 

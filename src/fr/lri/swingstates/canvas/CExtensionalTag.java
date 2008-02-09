@@ -94,8 +94,8 @@ public abstract class CExtensionalTag extends CTag {
 	 * @see CExtensionalTag#removed(CShape)
 	 */
 	public final CExtensionalTag removeFrom(CShape s){
-		removed(s);
-		collection.remove(s);	
+		if(collection.remove(s))
+			removed(s);
 		return this;
 	}
 

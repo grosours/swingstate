@@ -39,8 +39,10 @@ public class HighlightWidgets extends BasicApplet {
 				Transition getClass = new ClickOnComponent(BUTTON1) {
 					public void action() {
 						label1.setText("This widget is a "+getComponent().getClass().getName());
-						label2.setText("Coordinates in top level container: ("+getPointInMainContainer().getX()+", "+getPointInMainContainer().getY()+")");
-						label3.setText("Coordinates in local component    : ("+getPoint().getX()+", "+getPoint().getY()+")");
+						label2.setText("Coordinates in top level container: ("
+								+getPoint().getX()+", "+getPoint().getY()+")");
+						label3.setText("Coordinates in local component    : ("
+								+getPointInComponent(getComponent()).getX()+", "+getPointInComponent(getComponent()).getY()+")");
 					}
 				};
 				

@@ -11,6 +11,7 @@ import java.awt.event.KeyEvent;
 
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.CText;
+import fr.lri.swingstates.debug.StateMachineVisualization;
 
 //public class MenusGestureNewCutCopyPaste extends BasicApplet {
 public class MenusGestureNewCutCopyPaste extends BasicJApplet {
@@ -55,9 +56,12 @@ public class MenusGestureNewCutCopyPaste extends BasicJApplet {
 		            }
 		        };
 		    };
+		    
 		};
 
 
+		StateMachineVisualization.windowVisualization(markingMenuInteraction);
+		
 		getContentPane().add(editor);
 
 		setSize(600, 300);
