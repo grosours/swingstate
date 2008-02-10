@@ -52,6 +52,9 @@ import fr.lri.swingstates.sm.transitions.EventOnPosition;
  */
 public class JStateMachine extends BasicInputStateMachine implements MouseListener, MouseMotionListener, KeyListener {
 
+	/**
+	 * The picker for this state machine.
+	 */
 	private class JPicker implements Picker {
 
 		private Component  lastPicked = null;

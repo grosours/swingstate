@@ -16,6 +16,7 @@ import java.util.ListIterator;
 import fr.lri.swingstates.animations.ATag;
 import fr.lri.swingstates.animations.Animation;
 import fr.lri.swingstates.events.PickerCEvent;
+import fr.lri.swingstates.events.PickerEvent;
 import fr.lri.swingstates.events.Utils;
 import fr.lri.swingstates.events.VirtualAnimationEvent;
 import fr.lri.swingstates.events.VirtualCElementEvent;
@@ -1223,15 +1224,25 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		}
 
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
-			if (!(eventObject instanceof PickerCEvent))
+//			if (!(eventObject instanceof PickerCEvent))
+//				return false;
+//			PickerCEvent me = (PickerCEvent) eventObject;
+//			if (!isSourceControlled(me.getPicked()))
+//				return false;
+//			triggeringEvent = me;
+//			setPoint(me.getPoint());
+//			setShape(me.getPicked());
+//			return me.getID() == typeEvent && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me));
+			if (!(eventObject instanceof PickerEvent))
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
-			if (!isSourceControlled(me.getShape()))
+			if (!isSourceControlled(me.getPicked()))
 				return false;
 			triggeringEvent = me;
 			setPoint(me.getPoint());
-			setShape(me.getShape());
+			setShape(me.getPicked());
 			return me.getID() == typeEvent && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me));
+		
 		}
 
 		protected boolean matches(EventObject eventObject, int typeEvent) {
@@ -1623,7 +1634,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			if (matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_EXITED)) {
-				setShape(((PickerCEvent) eventObject).getShape());
+				setShape(((PickerCEvent) eventObject).getPicked());
 				return true;
 			}
 			return false;
@@ -2599,11 +2610,11 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
-			if (!isSourceControlled(me.getShape()))
+			if (!isSourceControlled(me.getPicked()))
 				return false;
 			triggeringEvent = me;
 			setPoint(me.getPoint());
-			setShape(me.getShape());
+			setShape(me.getPicked());
 			if (getShape() == null)
 				return (me.getID() == typeEvent) && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me));
 			else
@@ -2616,7 +2627,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			PickerCEvent me = (PickerCEvent) eventObject;
 			triggeringEvent = me;
 			setPoint(me.getPoint());
-			setShape(me.getShape());
+			setShape(me.getPicked());
 			if (getShape() == null)
 				return (me.getID() == typeEvent) && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) && (button == Utils.button((PickerCEvent) eventObject));
 			else
