@@ -19,7 +19,12 @@ public class PickerEvent<E> extends MouseWheelEvent {
 
 	protected Picker picker;
 	protected E picked;
+	private boolean hasAlreadyPicked = false;
 	
+	public boolean hasAlreadyPicked() {
+		return hasAlreadyPicked;
+	}
+
 	/**
 	 * Builds a <code>PickerEvent</code>.
 	 * @param source The source of the event
@@ -83,6 +88,7 @@ public class PickerEvent<E> extends MouseWheelEvent {
 			int clickCount, boolean popupTrigger) {
 		this(source, picker, id, when, modifiers, x, y, clickCount, popupTrigger);
 		this.picked = picked;
+		hasAlreadyPicked = true;
 	}
 
 	/**
@@ -108,6 +114,7 @@ public class PickerEvent<E> extends MouseWheelEvent {
 			int scrollType, int scrollAmount, int wheelRotation) {
 		this(source, picker, id, when, modifiers, x, y, clickCount, popupTrigger, scrollType, scrollAmount, wheelRotation);
 		this.picked = picked;
+		hasAlreadyPicked = true;
 	}
 	
 	/**
@@ -122,6 +129,11 @@ public class PickerEvent<E> extends MouseWheelEvent {
 	 */
 	public E getPicked() {
 		return picked;
+	}
+	
+	public void setPicked(E picked) {
+		this.picked = picked;
+		hasAlreadyPicked = true;
 	}
 	
 }

@@ -329,7 +329,7 @@ public class Canvas extends JPanel implements MouseListener,
 		boolean isConsumed = false;
 		CShape picked = pick(pt);
 		VirtualEvent toProcess = picked != null ? new VirtualShapeEvent(event,
-				picked, pt) : new VirtualPositionEvent(event, pt);
+				picked, pt) : new VirtualShapeEvent(event, null, pt);
 
 		for (Iterator i = stateMachines.iterator(); i.hasNext();) {
 			if (isConsumed)

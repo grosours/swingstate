@@ -24,9 +24,12 @@ import javax.swing.JComponent;
 import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
 
+import fr.lri.swingstates.canvas.CShape;
+import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.events.Picker;
 import fr.lri.swingstates.events.PickerEvent;
 import fr.lri.swingstates.events.Utils;
+import fr.lri.swingstates.events.VirtualShapeEvent;
 import fr.lri.swingstates.sm.transitions.EventOnPosition;
 
 /**
@@ -516,7 +519,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public boolean matches(EventObject eventObject) {
 			if(eventObject instanceof MouseEvent) {
 				MouseEvent me = (MouseEvent)eventObject;
-				position = me.getPoint();
+				// TODO
+//				position = me.getPoint();
 				setComponent(me.getComponent());
 			}
 			if(component == null || !getControlledObjects().contains(component)) return false;
@@ -889,14 +893,26 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public InputEvent getInputEvent() {
 			return (InputEvent)triggeringEvent;
 		}
+		
+		/**
+		 * {@inheritDoc}
+		 */
+		public Point2D getPoint() {
+			return ((MouseEvent)triggeringEvent).getPoint();
+		}
 
+		/**
+		 * {@inheritDoc}
+		 */
+		public Component getComponent() {
+			return ((MouseEvent)triggeringEvent).getComponent();
+		}
+		
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
 			triggeringEvent = me;
-			position = me.getPoint();
-			component = me.getComponent();
-			if(component == null || !getControlledObjects().contains(component)) return false;
+			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER);
 		}
@@ -905,9 +921,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
 			triggeringEvent = me;
-			position = me.getPoint();
-			component = me.getComponent();
-			if(component == null || !getControlledObjects().contains(component)) return false;
+			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
 			&& (button == Utils.button(me));
@@ -1505,14 +1519,26 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 				else return getClass().getSuperclass().getSimpleName()+"("+tagObject+", "+Utils.getButtonAsText(button)+","+Utils.getModifiersAsText(modifier)+","+evt+")";
 			}
 		}
+		
+		/**
+		 * {@inheritDoc}
+		 */
+		public Point2D getPoint() {
+			return ((MouseEvent)triggeringEvent).getPoint();
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		public Component getComponent() {
+			return ((MouseEvent)triggeringEvent).getComponent();
+		}
 
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
 			triggeringEvent = me;
-			position = me.getPoint();
-			component = me.getComponent();
-			if(component == null || !getControlledObjects().contains(component)) return false;
+			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
 			&& matches();
@@ -1522,9 +1548,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
 			triggeringEvent = me;
-			position = me.getPoint();
-			component = me.getComponent();
-			if(component == null || !getControlledObjects().contains(component)) return false;
+			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
 			&& (button == Utils.button(me))

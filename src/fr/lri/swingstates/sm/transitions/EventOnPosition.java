@@ -20,11 +20,6 @@ import fr.lri.swingstates.events.VirtualPositionEvent;
  */
 public class EventOnPosition extends Event {
 	
-	/*
-	 * The position at which this transition has occured (set dynamically)
-	 */
-	protected Point2D position = null;
-	
 	/**
 	 * Builds a transition on a position with no modifier.
 	 * @param keyEvent The string describing the events for which this transition must be triggered: "Down", "Move", "Drag", "Release", "Click"
@@ -66,15 +61,7 @@ public class EventOnPosition extends Event {
 	 * @return the location at which the mouse event firing this transition has occured.
 	 */
 	public Point2D getPoint(){
-		return position;
-	}
-	
-	/**
-	 * Stores the position at which this transition has occured.
-	 * @param pt The position
-	 */
-	protected void setPoint(Point2D pt){
-		position = pt;
+		return ((VirtualPositionEvent)triggeringEvent).getPoint();
 	}
 	
 	/**
@@ -93,13 +80,13 @@ public class EventOnPosition extends Event {
 			if(!classEvent.isAssignableFrom(eventObject.getClass())) {
 				return false;
 			}
-			triggeringEvent = eventObject;
 		} else {
-			if(!super.matches(eventObject)) return false;
-		}
-		if(eventObject instanceof VirtualPositionEvent) {
-			setPoint(((VirtualPositionEvent)eventObject).getPoint());
-			return true;
+			if(super.matches(eventObject)) {
+				if(eventObject instanceof VirtualPositionEvent) {
+					triggeringEvent = eventObject;
+					return true;
+				}
+			}
 		}
 		return false;
 	}

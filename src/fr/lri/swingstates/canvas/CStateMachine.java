@@ -8,6 +8,7 @@ package fr.lri.swingstates.canvas;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
+import java.awt.geom.Point2D;
 import java.util.EventObject;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -314,8 +315,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	 */
 	public abstract class EventOnShape extends EventOnPosition {
 
-		protected CShape shape;
-
 		/**
 		 * Builds a transition on a CShape with no modifier that loops on the
 		 * current state.
@@ -375,12 +374,9 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *         occured.
 		 */
 		public CShape getShape() {
-			return shape;
+			return ((VirtualShapeEvent)triggeringEvent).getShape();
 		}
 
-		void setShape(CShape s) {
-			shape = s;
-		}
 
 		/**
 		 * {@inheritDoc}
@@ -395,34 +391,23 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		/**
 		 * {@inheritDoc}
 		 */
+		public Point2D getPoint() {
+			return ((VirtualShapeEvent)triggeringEvent).getPoint();
+		}
+		
+		/**
+		 * {@inheritDoc}
+		 */
 		public boolean matches(EventObject eventObject) {
-			if (classEvent != null) {
-				if (!classEvent.isAssignableFrom(eventObject.getClass())) {
-					return false;
-				}
-				triggeringEvent = eventObject;
-			} else {
-				if (!super.matches(eventObject))
-					return false;
-			}
-			if (eventObject instanceof VirtualShapeEvent) {
-				if (!isSourceControlled(((VirtualShapeEvent) eventObject).getShape()))
-					return false;
-				setPoint(((VirtualPositionEvent) eventObject).getPoint());
-				setShape(((VirtualShapeEvent) eventObject).getShape());
-				return true;
-			} else {
-				if (triggeringEvent instanceof VirtualPositionEvent && eventObject.getSource() instanceof Canvas) {
-					setPoint(((VirtualPositionEvent) eventObject).getPoint());
-					CShape picked = ((Canvas) eventObject.getSource()).pick(((VirtualPositionEvent) triggeringEvent).getPoint());
-					if (picked == null)
-						return false;
-					else {
-						if (!isSourceControlled(picked))
-							return false;
-						setShape(picked);
-						return true;
+			if (super.matches(eventObject)) {
+				if (eventObject instanceof VirtualShapeEvent && eventObject.getSource() instanceof Canvas) {
+					VirtualShapeEvent vse = (VirtualShapeEvent)triggeringEvent;
+					if(!vse.hasAlreadyPicked()) {
+						Canvas source = (Canvas)vse.getSource();
+						vse.setShape(source.pick(vse.getPoint()));
 					}
+					CShape picked = vse.getShape();
+					return isSourceControlled(picked);
 				}
 			}
 			return false;
@@ -1219,34 +1204,59 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		/**
 		 * {@inheritDoc}
 		 */
+		public Point2D getPoint() {
+			return ((PickerCEvent)triggeringEvent).getPoint();
+		}
+		
+		/**
+		 * {@inheritDoc}
+		 */
+		public CShape getShape() {
+			return ((PickerCEvent)triggeringEvent).getPicked();
+		}
+		
+		/**
+		 * {@inheritDoc}
+		 */
 		public String toString() {
 			return getClass().getSuperclass().getSimpleName() + "(" + Utils.getButtonAsText(button) + "," + Utils.getModifiersAsText(modifier) + ")";
 		}
 
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
-//			if (!(eventObject instanceof PickerCEvent))
-//				return false;
-//			PickerCEvent me = (PickerCEvent) eventObject;
-//			if (!isSourceControlled(me.getPicked()))
-//				return false;
-//			triggeringEvent = me;
-//			setPoint(me.getPoint());
-//			setShape(me.getPicked());
-//			return me.getID() == typeEvent && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me));
-			if (!(eventObject instanceof PickerEvent))
+			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
-			if (!isSourceControlled(me.getPicked()))
-				return false;
-			triggeringEvent = me;
-			setPoint(me.getPoint());
-			setShape(me.getPicked());
-			return me.getID() == typeEvent && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me));
-		
+			if (me.getSource() instanceof Canvas) {
+				triggeringEvent = me;
+				if(!me.hasAlreadyPicked()) {
+					Canvas source = (Canvas)me.getSource();
+					me.setPicked(source.pick(me.getPoint()));
+				}
+				CShape picked = me.getPicked();
+				return isSourceControlled(picked);
+			}
+			return false;
 		}
 
 		protected boolean matches(EventObject eventObject, int typeEvent) {
-			return matchesIgnoreButtons(eventObject, typeEvent) && (button == Utils.button((PickerCEvent) eventObject));
+//			return matchesIgnoreButtons(eventObject, typeEvent) && (button == Utils.button((PickerCEvent) eventObject));
+			if (!(eventObject instanceof PickerCEvent))
+				return false;
+			PickerCEvent me = (PickerCEvent) eventObject;
+			if (me.getSource() instanceof Canvas) {
+				triggeringEvent = me;
+				if(!((me.getID() == typeEvent) 
+						&& (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) 
+						&& (button == Utils.button((PickerCEvent) eventObject)))) 
+					return false;
+				if(!me.hasAlreadyPicked()) {
+					Canvas source = (Canvas)me.getSource();
+					me.setPicked(source.pick(me.getPoint()));
+				}
+				CShape picked = me.getPicked();
+				return isSourceControlled(picked);
+			}
+			return false;
 		}
 	}
 
@@ -1634,7 +1644,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			if (matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_EXITED)) {
-				setShape(((PickerCEvent) eventObject).getPicked());
 				return true;
 			}
 			return false;
@@ -2605,33 +2614,55 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		public InputEvent getInputEvent() {
 			return (InputEvent) triggeringEvent;
 		}
+		
+		/**
+		 * {@inheritDoc}
+		 */
+		public Point2D getPoint() {
+			return ((PickerCEvent)triggeringEvent).getPoint();
+		}
+		
+		/**
+		 * {@inheritDoc}
+		 */
+		public CShape getShape() {
+			return ((PickerCEvent)triggeringEvent).getPicked();
+		}
 
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
-			if (!isSourceControlled(me.getPicked()))
-				return false;
-			triggeringEvent = me;
-			setPoint(me.getPoint());
-			setShape(me.getPicked());
-			if (getShape() == null)
-				return (me.getID() == typeEvent) && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me));
-			else
-				return (me.getID() == typeEvent) && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) && matches(getShape());
+			if (me.getSource() instanceof Canvas) {
+				triggeringEvent = me;
+				if(!me.hasAlreadyPicked()) {
+					Canvas source = (Canvas)me.getSource();
+					me.setPicked(source.pick(me.getPoint()));
+				}
+				CShape picked = me.getPicked();
+				return isSourceControlled(picked) && matches(getShape());
+			}
+			return false;
 		}
 
 		protected boolean matches(EventObject eventObject, int typeEvent) {
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
-			triggeringEvent = me;
-			setPoint(me.getPoint());
-			setShape(me.getPicked());
-			if (getShape() == null)
-				return (me.getID() == typeEvent) && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) && (button == Utils.button((PickerCEvent) eventObject));
-			else
-				return (me.getID() == typeEvent) && (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) && (button == Utils.button((PickerCEvent) eventObject)) && matches(getShape());
+			if (me.getSource() instanceof Canvas) {
+				triggeringEvent = me;
+				if(!((me.getID() == typeEvent) 
+						&& (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) 
+						&& (button == Utils.button((PickerCEvent) eventObject)))) 
+					return false;
+				if(!me.hasAlreadyPicked()) {
+					Canvas source = (Canvas)me.getSource();
+					me.setPicked(source.pick(me.getPoint()));
+				}
+				CShape picked = me.getPicked();
+				return isSourceControlled(picked) && matches(getShape());
+			}
+			return false;
 		}
 
 	}

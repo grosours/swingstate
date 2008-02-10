@@ -17,9 +17,19 @@ import fr.lri.swingstates.canvas.CShape;
  */
 public class VirtualShapeEvent extends VirtualPositionEvent {
 
+	private boolean hasAlreadyPicked = false;
 	CShape cshape;
 	int modifier;
 	
+	public boolean hasAlreadyPicked() {
+		return hasAlreadyPicked;
+	}
+
+	public void setShape(CShape shape) {
+		this.cshape = shape;
+		hasAlreadyPicked = true;
+	}
+
 	/**
 	 * Builds a <code>VirtualShapeEvent</code>.
 	 * @param n The name of the event.
@@ -29,6 +39,7 @@ public class VirtualShapeEvent extends VirtualPositionEvent {
 	public VirtualShapeEvent(String n, CShape shape, Point2D pt) {
 		super(n, pt);
 		cshape = shape;
+		hasAlreadyPicked = true;
 	}
 	
 	/**

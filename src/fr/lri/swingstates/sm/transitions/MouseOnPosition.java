@@ -2,6 +2,7 @@ package fr.lri.swingstates.sm.transitions;
 
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Point2D;
 import java.util.EventObject;
 
 import fr.lri.swingstates.events.Utils;
@@ -114,11 +115,17 @@ public abstract class MouseOnPosition extends EventOnPosition {
 		return (InputEvent)triggeringEvent;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
+	public Point2D getPoint() {
+		return ((MouseEvent)triggeringEvent).getPoint();
+	}
+	
 	protected boolean matches(EventObject eventObject, int typeEvent) {
 		if(!(eventObject instanceof MouseEvent)) return false;
 		MouseEvent me = (MouseEvent)eventObject;
 		triggeringEvent = me;
-		setPoint(me.getPoint());
 		return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == BasicInputStateMachine.ANYMODIFIER)
 			&& (button == Utils.button(me) || button == BasicInputStateMachine.ANYBUTTON);
