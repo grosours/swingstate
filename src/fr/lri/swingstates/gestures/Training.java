@@ -15,6 +15,8 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -34,6 +36,7 @@ import java.util.Vector;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -102,7 +105,11 @@ public class Training {
 
 	private static int INDEX_RUBINE = 0;
 	private static int INDEX_DOLLAR1 = 1;
-
+	private JCheckBox dollar1Enable;
+	private JCheckBox rubineEnable;
+	private JTextArea dollar1List = new JTextArea();
+	private JTextArea rubineList = new JTextArea();
+	
 	private static DecimalFormat myFormatter = (DecimalFormat) NumberFormat.getNumberInstance(new Locale("en", "US"));
 	private static Font currentFont = new Font("Verdana", Font.PLAIN, 12);
 	private static int nbWindowsOpened = 0;
@@ -125,7 +132,8 @@ public class Training {
 	private JSpinner mahalanobis;
 	private JSpinner distanceDollar1;
 	private JDialog recognitionInfoFrame;
-	private JTextArea recognitionInfoTextArea = new JTextArea();
+	private JPanel panelRecognitionInfo;
+//	private JTextArea recognitionInfoTextArea = new JTextArea();
 	private JTextArea textAreaFeaturesAverage;
 	private JTextArea textAreaName;
 	private JTextArea textAreaNbExamples;
@@ -140,6 +148,12 @@ public class Training {
 		frame = new JFrame("Gesture Training");
 		infoFrame = new JDialog(frame, "average features vector of the class");
 		recognitionInfoFrame = new JDialog(frame, "results");
+		panelRecognitionInfo = new JPanel(new BorderLayout());
+		JScrollPane jspRecognitionInfo = new JScrollPane(panelRecognitionInfo);
+		jspRecognitionInfo.setPreferredSize(new Dimension(400, 300));
+		recognitionInfoFrame.getContentPane().add(jspRecognitionInfo);
+		dollar1List.setBorder(BorderFactory.createEtchedBorder());
+		rubineList.setBorder(BorderFactory.createEtchedBorder());
 		frame.setFont(currentFont);
 		frame.addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
@@ -162,10 +176,14 @@ public class Training {
 		trainingZone();
 		testingZone();
 
-		recognitionInfoTextArea.setForeground(Color.DARK_GRAY);
-		recognitionInfoTextArea.setFont(currentFont);
-		recognitionInfoTextArea.setEditable(false);
-		recognitionInfoFrame.getContentPane().add(recognitionInfoTextArea);
+		dollar1List.setForeground(Color.DARK_GRAY);
+		dollar1List.setFont(currentFont);
+		dollar1List.setEditable(false);
+		rubineList.setForeground(Color.DARK_GRAY);
+		rubineList.setFont(currentFont);
+		rubineList.setEditable(false);
+		recognitionInfoFrame.getContentPane().add(rubineList, BorderLayout.WEST);
+		recognitionInfoFrame.getContentPane().add(dollar1List, BorderLayout.EAST);
 
 		frame.setVisible(true);
 	}
@@ -537,7 +555,7 @@ public class Training {
 		JPanel middleTopPanel = new JPanel();
 		middleTopPanel.setBorder(BorderFactory.createTitledBorder("Training"));
 		JPanel topPanel = new JPanel();
-		topPanel.setBorder(BorderFactory.createTitledBorder("Parameters"));
+		topPanel.setBorder(BorderFactory.createTitledBorder("Classifiers"));
 
 		// Left top panel layout
 		GridBagLayout gblLeftTopPanel = new GridBagLayout();
@@ -570,7 +588,7 @@ public class Training {
 		rightTopPanel.add(testingCanvas, constraintsRightTopPanel);
 
 		// Top panel layout
-		topPanel.setLayout(new FlowLayout());
+		topPanel.setLayout(new GridLayout(1, 4));
 
 //		JLabel probaLabel = new JLabel("Minimum probability of non ambiguity (Rubine)");
 //		probaLabel.setFont(currentFont);
@@ -579,21 +597,69 @@ public class Training {
 //		probability.setPreferredSize(new Dimension(100, probability.getPreferredSize().height));
 //		topPanel.add(probability);
 
-		JLabel distLabel = new JLabel("Maximum distance (Rubine)");
+		final JPanel rubinePanel = new JPanel(new BorderLayout());
+		rubinePanel.setBorder(BorderFactory.createEtchedBorder());
+		final JPanel dollar1Panel = new JPanel(new BorderLayout());
+		dollar1Panel.setBorder(BorderFactory.createEtchedBorder());
+		topPanel.add(rubinePanel);
+		topPanel.add(dollar1Panel);
+		topPanel.add(new JPanel());
+		topPanel.add(new JPanel());
+		
+		rubineEnable = new JCheckBox("Rubine");
+		rubineEnable.setFont(currentFont);
+		rubinePanel.add(rubineEnable, BorderLayout.NORTH);
+		
+		
+		final JLabel distLabel = new JLabel("Distance max: ");
 		distLabel.setFont(currentFont);
-		topPanel.add(distLabel);
+		rubinePanel.add(distLabel, BorderLayout.WEST);
 
 		mahalanobis.setPreferredSize(new Dimension(100, mahalanobis.getPreferredSize().height));
 		mahalanobis.setEditor(new JSpinner.NumberEditor(mahalanobis, "#"));
-		topPanel.add(mahalanobis);
-
-		JLabel distanceDollar1Label = new JLabel("Maximum distance ($1)");
+		rubinePanel.add(mahalanobis, BorderLayout.CENTER);
+		
+		rubineEnable.setSelected(true);
+		rubineEnable.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+				if(e.getStateChange() == ItemEvent.DESELECTED) {
+					rubinePanel.setForeground(Color.LIGHT_GRAY);
+					distLabel.setEnabled(false);
+					mahalanobis.setEnabled(false);
+				} else {
+					rubinePanel.setForeground(Color.BLACK);
+					distLabel.setEnabled(true);
+					mahalanobis.setEnabled(true);
+				}
+			}
+		});
+		
+		dollar1Enable = new JCheckBox("$1");
+		dollar1Enable.setFont(currentFont);
+		dollar1Panel.add(dollar1Enable, BorderLayout.NORTH);
+		
+		final JLabel distanceDollar1Label = new JLabel("Distance max: ");
 		distanceDollar1Label.setFont(currentFont);
-		topPanel.add(distanceDollar1Label);
+		dollar1Panel.add(distanceDollar1Label, BorderLayout.WEST);
 
 		distanceDollar1.setPreferredSize(new Dimension(100, distanceDollar1.getPreferredSize().height));
-		topPanel.add(distanceDollar1);
+		dollar1Panel.add(distanceDollar1, BorderLayout.CENTER);
 
+		dollar1Enable.setSelected(true);
+		dollar1Enable.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+				if(e.getStateChange() == ItemEvent.DESELECTED) {
+					distanceDollar1Label.setForeground(Color.LIGHT_GRAY);
+					distanceDollar1Label.setEnabled(false);
+					distanceDollar1.setEnabled(false);
+				} else {
+					distanceDollar1Label.setForeground(Color.BLACK);
+					distanceDollar1Label.setEnabled(true);
+					distanceDollar1.setEnabled(true);
+				}
+			}
+		});
+		
 		// main layout
 		frame.getContentPane().setLayout(new BorderLayout());
 		JPanel middle = new JPanel();
@@ -686,30 +752,52 @@ public class Training {
 	}
 
 	protected void classify(Gesture gest) {
-		// best match
-		String textResult = "Rubine classifier has recognized: \n";
-		textResult += "\t" + getRubineClassifier().classify(gest);
-		textResult += "\n" + "\t Distance: " + getRubineClassifier().getCurrentDistance();
-//		textResult += "\n" + "\t Probability of non ambiguity: " + getRubineClassifier().getCurrentProbability();
-		textResult += "\n" + "$1 classifier has recognized: \n";
-		textResult += "\t" + classifiers.get(INDEX_DOLLAR1).classify(gest);
-		textResult += "\n" + "\t Distance: " + getDollar1Classifier().getCurrentDistance();
-
-		// list match
-		String sortedClasses = "\n\nRubine classifier has sorted classes in the following order: \n";
-		Vector<String> sorted = getRubineClassifier().sortedClasses(gest);
-		for (int i = 0; i < sorted.size(); i++) {
-			sortedClasses += "\n" + sorted.get(i);
+		if(rubineEnable.isSelected()) {
+			String textResult = "Rubine classifier has recognized: \n";
+			// best match
+			try {
+			textResult += "    " + getRubineClassifier().classify(gest);
+			textResult += "\n" + "Distance: " + getRubineClassifier().getCurrentDistance();
+//			textResult += "\n" + "\tProbability of non ambiguity: " + getRubineClassifier().getCurrentProbability();
+			// list match
+			String sortedClasses = "\n\nClasses order (closest first): \n";
+			Vector<Score> sorted = getRubineClassifier().sortedClasses(gest);
+			for (Iterator<Score> iterator = sorted.iterator(); iterator.hasNext();) {
+				Score next = iterator.next();
+				sortedClasses += "\n    " + next.getName()+" ("+next.getScore()+")";
+			}
+			textResult += sortedClasses;
+			rubineList.setText(textResult);
+			} catch(Exception e) {
+				textResult = "Rubine classifier requires at least: \n";
+				textResult +=  "- two classes \n";
+				textResult +=  "- two examples per class.";
+				rubineList.setText(textResult);
+			}
+			if(!panelRecognitionInfo.isAncestorOf(rubineList))
+				panelRecognitionInfo.add(rubineList, BorderLayout.WEST);
+		} else {
+			panelRecognitionInfo.remove(rubineList);
 		}
-		textResult += sortedClasses;
-		sortedClasses = "\n\n$1 classifier has sorted classes in the following order: \n";
-		sorted = getDollar1Classifier().sortedClasses(gest);
-		for (Iterator<String> iterator = sorted.iterator(); iterator.hasNext();) {
-			sortedClasses += "\n" + iterator.next();
-		}
-		textResult += sortedClasses;
+		
+		if(dollar1Enable.isSelected()) {
+			String textResult = "$1 classifier has recognized: \n";
+			textResult += "    " + classifiers.get(INDEX_DOLLAR1).classify(gest);
+			textResult += "\n" + "Distance: " + getDollar1Classifier().getCurrentDistance();
+			String sortedClasses = "\n\nClasses order (closest first): \n";
+			Vector<Score> sorted = getDollar1Classifier().sortedClasses(gest);
+			for (Iterator<Score> iterator = sorted.iterator(); iterator.hasNext();) {
+				Score next = iterator.next();
+				sortedClasses += "\n    " + next.getName()+" ("+next.getScore()+")";
+			}
+			textResult += sortedClasses;
 
-		recognitionInfoTextArea.setText(textResult);
+			dollar1List.setText(textResult);
+			if(!panelRecognitionInfo.isAncestorOf(dollar1List))
+				panelRecognitionInfo.add(dollar1List, BorderLayout.EAST);
+		} else {
+			panelRecognitionInfo.remove(dollar1List);
+		}
 		recognitionInfoFrame.pack();
 		recognitionInfoFrame.setVisible(true);
 	}

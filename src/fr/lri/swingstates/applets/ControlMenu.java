@@ -150,11 +150,6 @@ public class ControlMenu extends Menu {
 					}
 				};
 				public void leave() {
-					background.setPickable(true);
-					// menu is interactive but not visible
-					tagWhole.setPickable(true);
-					tagLabels.setPickable(false);
-					// 300
 					armTimer(1000, false);
 				}
 			};
@@ -180,7 +175,7 @@ public class ControlMenu extends Menu {
 				};
 			};
 			
-			public State simpleItem = new State() {
+			class StateOnItem extends State {
 				Transition showMenu = new TimeOut() {
 					public void action() {
 						tagWhole.setDrawable(true);
@@ -193,42 +188,38 @@ public class ControlMenu extends Menu {
 						lastPoint = getPoint();
 					}
 				};
-				Transition enterOnSimpleItem = new EnterOnTag(SimpleMenuItem.class) {
-					public void action() {
-						lastItemVisited = ((SimpleMenuItem)getTag()).getCommand();
-					}
-				};
-				Transition selectCommand = new EnterOnTag("background", ">> menuOff") {
-					public void action() {
-						// to see shapes that are potentially under the background shape
-						// that we just use to detect crossing
-						getTag().setPickable(false);
-						lastItemVisited.apply(shapeUnderMenu, getPoint(), 0);
-					}
-				};
-			};
-			public State continuousItem = new State() {
-				Transition showMenu = new TimeOut() {
-					public void action() {
-						tagWhole.setDrawable(true);
-					}
-				};
-				Transition stop = new Release(BUTTON1, ">> menuOff") { };
-				Transition enterOnContinuousItem = new EnterOnTag(ControlMenuItem.class) {
-					public void action() {
-						lastItemVisited = ((ControlMenuItem)getTag()).getCommand();
-						lastPoint = getPoint();
-					}
-				};
 				Transition enterOnSimpleItem = new EnterOnTag(SimpleMenuItem.class, ">> simpleItem") {
 					public void action() {
 						lastItemVisited = ((SimpleMenuItem)getTag()).getCommand();
 					}
 				};
+			}
+			
+			public State simpleItem = new StateOnItem() {
+				Transition selectCommand = new EnterOnTag("background", ">> menuOff") {
+					public void action() {
+						// we use a EnterOnTag("background") transition 
+						// to detect when a menu item is crossed outward to select a command.
+						//
+						// If we had used a LeaveOnTag(MenuItem.class) transition,
+						// it would also have been triggered by leave events
+						// which are immediately followed by a EnterOnTag(MenuItem.class) 
+						// when the user changes the selected item during interaction.
+						getTag().setPickable(false);
+						lastItemVisited.apply(shapeUnderMenu, getPoint(), 0);
+					}
+				};
+			};
+			public State continuousItem = new StateOnItem() {
 				Transition selectCommand = new EnterOnTag("background", ">> control") {
 					public void action() {
-						// to see shapes that are potentially under the background shape
-						// that we just use to detect crossing
+						// we use a EnterOnTag("background") transition 
+						// to detect when a menu item is crossed outward to select a command.
+						//
+						// If we had used a LeaveOnTag(MenuItem.class) transition,
+						// it would also have been triggered by leave events
+						// which are immediately followed by a EnterOnTag(MenuItem.class) 
+						// when the user changes the selected item during interaction.
 						getTag().setPickable(false);
 						lastItemVisited.start(shapeUnderMenu, pInit);
 						lastPoint = getPoint();
@@ -237,7 +228,6 @@ public class ControlMenu extends Menu {
 			};
 			public State control = new State() {
 				public void enter() {
-//					tagWhole.setTransparencyFill(0.5f);
 					DefaultBoundedRangeModel rm = ((ContinuousCommand)lastItemVisited).getRangeModel();
 					feedback.setText(""+rm.getValue()).aboveAll();
 				}
@@ -258,14 +248,19 @@ public class ControlMenu extends Menu {
 	}
 
 	void showMenu(Point2D pt) {
+		// stop the current animation (if any) and restore opacity
 		backgroundDisapear.stop();
 		labelsDisapear.stop();
-		
-		tagWhole.setDrawable(false);
-		parent.translateTo(pt.getX(), pt.getY()).setDrawable(true);
+		tagWhole.setTransparencyFill(1).setTransparencyOutline(1);
+		// menu is interactive but only its center is visible
+		tagWhole.setDrawable(false).setPickable(true);
+		parent.setDrawable(true);
+		// menu is displayed above all (labels being on top and not pickable)
 		background.setPickable(true).aboveAll();
-		tagWhole.setTransparencyFill(1).setTransparencyOutline(1).setPickable(true).aboveAll();
+		tagWhole.aboveAll();
 		tagLabels.setPickable(false).aboveAll();
+		// menu under position. On the central circle 
+		parent.translateTo(pt.getX(), pt.getY());
 	}
 
 	AnimationTransparency backgroundDisapear = new AnimationTransparency(0);
@@ -300,6 +295,8 @@ public class ControlMenu extends Menu {
 	void hideMenu() {
 		menuXorLabel.animate(backgroundDisapear);
 		background.setPickable(false);
+		tagWhole.setPickable(false);
+		parent.setPickable(false);
 	}
 	
 	void menuLayout(Command[] items) {

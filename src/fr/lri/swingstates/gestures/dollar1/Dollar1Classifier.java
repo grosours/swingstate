@@ -28,6 +28,7 @@ import fr.lri.swingstates.canvas.CPolyLine;
 import fr.lri.swingstates.gestures.AbstractClassifier;
 import fr.lri.swingstates.gestures.Gesture;
 import fr.lri.swingstates.gestures.GestureClass;
+import fr.lri.swingstates.gestures.Score;
 
 /**
  * A classifier that implements $1 algorithm to classify gestures.
@@ -236,9 +237,8 @@ public class Dollar1Classifier extends AbstractClassifier {
 	/**
 	 * {@inheritDoc}
 	 */
-	public Vector<String> sortedClasses(Gesture g) {
-		Vector<String> sortedClasses = new Vector<String>();
-		Vector<Double> sortedScores = new Vector<Double>();
+	public Vector<Score> sortedClasses(Gesture g) {
+		Vector<Score> sortedClasses = new Vector<Score>();
 
 		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
 		Dollar1Utils.resample(g.getPoints(), nbPoints, inputPointsResampled);
@@ -257,14 +257,12 @@ public class Dollar1Classifier extends AbstractClassifier {
 					minClassScore = score;
 			}
 			if (nc == 0) {
-				sortedClasses.add(classes.get(nc).getName());
-				sortedScores.add(minClassScore);
+				sortedClasses.add(new Score(classes.get(nc).getName(), minClassScore));
 			} else {
 				int i = 0;
-				while (i < sortedScores.size() && sortedScores.get(i) < minClassScore)
+				while (i < sortedClasses.size() && sortedClasses.get(i).getScore() < minClassScore)
 					i++;
-				sortedClasses.add(i, classes.get(nc).getName());
-				sortedScores.add(i, minClassScore);
+				sortedClasses.add(i, new Score(classes.get(nc).getName(), minClassScore));
 			}
 		}
 

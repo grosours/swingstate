@@ -439,7 +439,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 	 */
 	public abstract class EventOnComponent extends EventOnPosition {
 
-		Component component;
+//		Component component;
 
 		/**
 		 * Builds a transition on a JComponent with no modifier that loops on the current state.
@@ -492,7 +492,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		 * @return the JComponent on which the mouse event firing this transition has occured.
 		 */
 		public Component getComponent() {
-			return component;
+			return ((MouseEvent)triggeringEvent).getComponent();
 		}
 
 		/**
@@ -503,14 +503,10 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		 */
 		public Point2D getPointInComponent(Component c) {
 			Point point = SwingUtilities.convertPoint(
-					getContentPane(component),
+					getContentPane(getComponent()),
 					new Point((int)getPoint().getX(), (int)getPoint().getY()),
 					c);
 			return point;
-		}
-
-		void setComponent(Component c) {
-			component = c;
 		}
 
 		/**
@@ -519,11 +515,9 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public boolean matches(EventObject eventObject) {
 			if(eventObject instanceof MouseEvent) {
 				MouseEvent me = (MouseEvent)eventObject;
-				// TODO
-//				position = me.getPoint();
-				setComponent(me.getComponent());
+				triggeringEvent = eventObject;
 			}
-			if(component == null || !getControlledObjects().contains(component)) return false;
+			if(getComponent() == null || !getControlledObjects().contains(getComponent())) return false;
 			boolean b =  super.matches(eventObject);
 			return b;
 		}
@@ -1267,7 +1261,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 					if(tagClass.equals(o.getClass())) {
 						o.reset();
 						while(o.hasNext()) {
-							if(o.nextComponent() == component) {
+							if(o.nextComponent() == getComponent()) {
 								hasTag = true;
 								break;
 							}
@@ -1292,8 +1286,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 					Class cls;
 					try {
 						cls = Class.forName(tagName);
-						if(cls != null && cls.isAssignableFrom(component.getClass())) {
-							((JNamedTag)tg).addTo(component);
+						if(cls != null && cls.isAssignableFrom(getComponent().getClass())) {
+							((JNamedTag)tg).addTo(getComponent());
 							hasTested = true;
 							hasTag = true;
 						}
@@ -1308,7 +1302,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			if(!hasTested && tg!=null) {
 				tg.reset();
 				while(tg.hasNext()) {
-					if(tg.nextComponent() == component) {
+					if(tg.nextComponent() == getComponent()) {
 						hasTag = true;
 						break;
 					}

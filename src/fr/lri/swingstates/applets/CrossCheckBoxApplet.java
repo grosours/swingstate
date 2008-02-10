@@ -24,6 +24,8 @@ import fr.lri.swingstates.sm.transitions.Release;
 
 public class CrossCheckBoxApplet extends JApplet {
 
+	private Canvas canvasForInking;
+	
 	public void init() {
 		try {
 			javax.swing.SwingUtilities.invokeAndWait(new Runnable() {
@@ -38,15 +40,13 @@ public class CrossCheckBoxApplet extends JApplet {
 
 	// Install a canvas to draw ink left by cursor when he is in crossing mode.
 	public void enableInk() {
-		final Canvas gp = new Canvas(getContentPane().getWidth(),
-				getContentPane().getHeight());
-		new CStateMachine(gp) {
+		new CStateMachine(canvasForInking) {
 			Point2D ptInit = new Point2D.Double(0, 0);
 			CSegment ink;
 
 			// Point2D lastPoint;
 			public void doReset() {
-				ink = (CSegment) gp.newSegment(0, 0, 1, 1).setDrawable(false)
+				ink = (CSegment) canvasForInking.newSegment(0, 0, 1, 1).setDrawable(false)
 						.setFilled(false).setStroke(
 								new BasicStroke(1.3f, BasicStroke.CAP_ROUND,
 										BasicStroke.JOIN_ROUND))
@@ -83,10 +83,10 @@ public class CrossCheckBoxApplet extends JApplet {
 				// };
 			};
 		};
-		gp.setTransparencyFill(0.5f);
-		gp.setBackground(new Color(1.0f, 1.0f, 1.0f, 0.0f));
-		gp.setOpaque(false);
-		rootPane.setGlassPane(gp);
+		canvasForInking.setTransparencyFill(0.5f);
+		canvasForInking.setBackground(new Color(1.0f, 1.0f, 1.0f, 0.0f));
+		canvasForInking.setOpaque(false);
+		rootPane.setGlassPane(canvasForInking);
 		rootPane.getGlassPane().setVisible(true);
 	}
 
@@ -113,6 +113,8 @@ public class CrossCheckBoxApplet extends JApplet {
 		// add(tabButtons[i]);
 		// }
 
+		canvasForInking = new Canvas(getContentPane().getWidth(),
+				getContentPane().getHeight());
 		enableInk();
 
 		new CrossingInteraction(this, JCheckBox.class) {

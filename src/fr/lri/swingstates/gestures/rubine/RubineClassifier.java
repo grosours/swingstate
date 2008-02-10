@@ -28,6 +28,7 @@ import fr.lri.swingstates.canvas.CPolyLine;
 import fr.lri.swingstates.gestures.AbstractClassifier;
 import fr.lri.swingstates.gestures.Gesture;
 import fr.lri.swingstates.gestures.GestureClass;
+import fr.lri.swingstates.gestures.Score;
 
 /**
  * A classifier that implements rubine's algorithm to classify gestures.
@@ -447,26 +448,40 @@ public class RubineClassifier extends AbstractClassifier {
 	/**
 	 * {@inheritDoc}
 	 */
-	public Vector<String> sortedClasses(Gesture g) {
+	public Vector<Score> sortedClasses(Gesture g) {
 		compile();
-		Vector<String> sortedClasses = new Vector<String>();
-		Vector<Double> sortedScores = new Vector<Double>();
+		Vector<Score> sortedClasses = new Vector<Score>();
 
 		Vector<Double> fv = RubineGestureClass.compute(g);
 		Vector<Vector<Double>> wghts = weights;
 		ArrayList<Double> cst = cnst;
 
+//		for (int nc = 0; nc < classes.size(); nc++) {
+//			double value = VectorUtility.scalarProduct(wghts.get(nc), fv) + cst.get(nc);
+//			if (nc == 0) {
+//				sortedClasses.add(new Score(classes.get(nc).getName(), value));
+//			} else {
+//				int i = 0;
+//				while (i < sortedClasses.size() && sortedClasses.get(i).getScore() > value)
+//					i++;
+//				sortedClasses.add(i, new Score(classes.get(nc).getName(), value));
+//			}
+//		}
+		
+		Vector<Double> sortedScalarProduct = new Vector<Double>();
 		for (int nc = 0; nc < classes.size(); nc++) {
 			double value = VectorUtility.scalarProduct(wghts.get(nc), fv) + cst.get(nc);
 			if (nc == 0) {
-				sortedClasses.add(classes.get(nc).getName());
-				sortedScores.add(value);
+				sortedClasses.add(new Score(classes.get(nc).getName(), 
+						mahalanobisDistance(fv, ((RubineGestureClass) classes.get(nc)).getAverage(), invAvgCov)));
+				sortedScalarProduct.add(value);
 			} else {
 				int i = 0;
-				while (i < sortedScores.size() && sortedScores.get(i) > value)
+				while (i < sortedScalarProduct.size() && sortedScalarProduct.get(i) > value)
 					i++;
-				sortedClasses.add(i, classes.get(nc).getName());
-				sortedScores.add(i, value);
+				sortedClasses.add(i, new Score(classes.get(nc).getName(), 
+						mahalanobisDistance(fv, ((RubineGestureClass) classes.get(nc)).getAverage(), invAvgCov)));
+				sortedScalarProduct.add(i, value);
 			}
 		}
 		return sortedClasses;

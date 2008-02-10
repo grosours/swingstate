@@ -125,16 +125,17 @@ public abstract class AbstractClassifier {
 	public abstract String classify(Gesture g);
 
 	/**
-	 * Computes a sorted list of class contained in this recognizer from the
+	 * Computes a sorted list of classes contained in this recognizer from the
 	 * best match to the the worst match given a gesture.
 	 * 
 	 * @param g
 	 *            The gesture
-	 * @return The sorted list of class names (0: best match ... n-1: worst
-	 *         match | n being the number of classes recorder in this
-	 *         recognizer).
+	 * @return a vector of scores for all the classes registered in this classifier 
+	 * 			sorted from the best match (index 0) to the worst match (index n-1),
+	 * 			with n the number of classes.
+	 * 			A score is a couple (class_name, distance).
 	 */
-	public abstract Vector<String> sortedClasses(Gesture g);
+	public abstract Vector<Score> sortedClasses(Gesture g);
 
 	/**
 	 * Saves the definition of this classifier in a file.

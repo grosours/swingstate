@@ -269,6 +269,39 @@ public class CText extends CShape {
 	public String getText() {
 		return text;
 	}
+	
+	/**
+	 * Sets the reference point of this <code>CText</code>
+	 * to its baseline.
+	 * 
+	 * <p>
+	 * By default, the position of a <code>CText</code> specifies
+	 * the upper left corner of its bounding box. For example, the
+	 * following lines makes the two <code>CText</code> be displayed
+	 * below the segment [(10, 20), (50, 20)]: 
+	 * <pre>
+	 * CText text1 = canvas.newText(10, 20, "ab");
+	 * CText text2 = canvas.newText(30, 20, "pc");
+	 * canvas.newSegment(10, 20, 50, 20);
+	 * </pre>
+	 * This can be an issue for setting the position of a <code>CText</code> 
+	 * according to its baseline.
+	 * Setting the reference point of a <code>CText</code> to its
+	 * baseline allows to overcome this problem:
+	 * <pre>
+	 * text1.setReferencePointToBaseline().translateTo(10, 20);
+	 * text2.setReferencePointToBaseline().translateTo(30, 20);
+	 * </pre>
+	 * text1 and text2 appear as if they were written on 
+	 * the same virtual line positioned at y=20.
+	 * </p>
+	 * 
+	 * @return this <code>CText</code>.
+	 */
+	public CText setReferencePointToBaseline() {
+		double y =  - yOffSet / getHeight();
+		return (CText)super.setReferencePoint(0, y);
+	};
 
 	/**
 	 * Sets the text to be displayed.
