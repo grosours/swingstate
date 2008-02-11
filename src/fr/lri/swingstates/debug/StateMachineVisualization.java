@@ -437,7 +437,8 @@ public class StateMachineVisualization extends Canvas {
 			}
 
 		});
-		smToVisualize.init();
+		// to make the state machine start
+		smToVisualize.resume();
 		hilite(smToVisualize.getInitialState(), null);
 		
 		new CStateMachine(this) {

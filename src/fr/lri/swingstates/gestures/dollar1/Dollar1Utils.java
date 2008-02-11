@@ -30,7 +30,7 @@ public class Dollar1Utils {
 
 	private Dollar1Utils() { }
 	
-	static double pathLength(Vector<Point2D> points) {
+	public static double pathLength(Vector<Point2D> points) {
 		double d = 0;
 		for (int i = 1; i < points.size(); i++) {
 			d += points.get(i - 1).distance(points.get(i));
@@ -38,7 +38,7 @@ public class Dollar1Utils {
 		return d;
 	}
 
-	static void resample(Vector<Point2D> points, int n, Vector<Point2D> newPoints) {
+	public static void resample(Vector<Point2D> points, int n, Vector<Point2D> newPoints) {
 		if (points.isEmpty())
 			return;
 		Vector<Point2D> dstPts = new Vector<Point2D>(n);
@@ -72,7 +72,7 @@ public class Dollar1Utils {
 		newPoints.addAll(dstPts);
 	}
 
-	static Point2D centroid(Vector<Point2D> points) {
+	public static Point2D centroid(Vector<Point2D> points) {
 		double sumX = 0;
 		double sumY = 0;
 		for (Iterator<Point2D> iterator = points.iterator(); iterator.hasNext();) {
@@ -84,7 +84,7 @@ public class Dollar1Utils {
 		return new Point2D.Double(sumX / length, sumY / length);
 	}
 
-	static void rotateToZero(Vector<Point2D> points, Vector<Point2D> newPoints) {
+	public static void rotateToZero(Vector<Point2D> points, Vector<Point2D> newPoints) {
 		Point2D c = centroid(points);
 		double theta = Math.atan2(c.getY() - points.get(0).getY(), c.getX() - points.get(0).getX());
 		rotateBy(points, -theta, newPoints);
@@ -98,7 +98,7 @@ public class Dollar1Utils {
 	 * @param newPoints
 	 *            the points where to store rotated points
 	 */
-	static void rotateBy(Vector<Point2D> points, double theta, Vector<Point2D> newPoints) {
+	public static void rotateBy(Vector<Point2D> points, double theta, Vector<Point2D> newPoints) {
 		Point2D c = centroid(points);
 		Point2D ptSrc, ptDest;
 		for (int i = 0; i < points.size(); i++) {
@@ -114,7 +114,7 @@ public class Dollar1Utils {
 		}
 	}
 
-	static Rectangle2D boundingBox(Vector<Point2D> points) {
+	public static Rectangle2D boundingBox(Vector<Point2D> points) {
 		double minX = Double.MAX_VALUE;
 		double minY = Double.MAX_VALUE;
 		double maxX = Double.MIN_VALUE;
@@ -136,8 +136,9 @@ public class Dollar1Utils {
 		return new Rectangle2D.Double(minX, maxX, w, h);
 	}
 
-	static void scaleToSquare(Vector<Point2D> points, double size, Vector<Point2D> newPoints) {
+	public static void scaleToSquare(Vector<Point2D> points, double size, Vector<Point2D> newPoints) {
 		Rectangle2D bb = boundingBox(points);
+		double maxSide = Math.max(bb.getWidth(), bb.getHeight());
 		Point2D ptSrc, ptDest;
 		for (int i = 0; i < points.size(); i++) {
 			ptSrc = points.get(i);
@@ -147,11 +148,11 @@ public class Dollar1Utils {
 				ptDest = new Point2D.Double();
 				newPoints.add(i, ptDest);
 			}
-			ptDest.setLocation(ptSrc.getX() * (size / bb.getWidth()), ptSrc.getY() * (size / bb.getHeight()));
+			ptDest.setLocation(ptSrc.getX() * (size / maxSide), ptSrc.getY() * (size / maxSide));
 		}
 	}
 
-	static void translateToOrigin(Vector<Point2D> points, Vector<Point2D> newPoints) {
+	public static void translateToOrigin(Vector<Point2D> points, Vector<Point2D> newPoints) {
 		Point2D c = centroid(points);
 		Point2D ptSrc, ptDest;
 		Iterator<Point2D> iteratorNewPoints = newPoints.iterator();
@@ -167,7 +168,7 @@ public class Dollar1Utils {
 		}
 	}
 
-	static double distanceAtBestAngle(Vector<Point2D> points, Vector<Point2D> gesturePoints, double thetaA, double thetaB, double deltaTheta) {
+	public static double distanceAtBestAngle(Vector<Point2D> points, Vector<Point2D> gesturePoints, double thetaA, double thetaB, double deltaTheta) {
 		double thetaa = thetaA;
 		double thetab = thetaB;
 		double phi = 0.5 * (-1 + Math.sqrt(5));
@@ -200,7 +201,7 @@ public class Dollar1Utils {
 		return res;
 	}
 
-	private static double pathDistance(Vector<Point2D> pointsA, Vector<Point2D> pointsB) {
+	public static double pathDistance(Vector<Point2D> pointsA, Vector<Point2D> pointsB) {
 		double d = 0;
 		Iterator<Point2D> iteratorB = pointsB.iterator();
 		Point2D ptA, ptB;

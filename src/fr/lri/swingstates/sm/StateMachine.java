@@ -103,6 +103,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	public StateMachine(){
 //		I don't understand why fields are not initialized at this stage...
 //		reset();
+		init();
 	}
 
 	/**
@@ -246,99 +247,28 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * When a state machine is active, it processes events.
 	 */
 	public void resume() {
+		if(!inited) initStatesAndTransitions();
 		if(!this.active) this.doResume();
 		this.active = true;
 		if(this.watcher != null) this.watcher.fireSmResumed();
 	}
 
-
+	/**
+	 * This method is called by the constructor of a state machine.
+	 * By default, it does nothing.
+	 * Override it to specify required variables initializations for a specific machine.
+	 */
+	public void init() {
+		
+	}
 
 	/**
 	 * Internal initialization of the state machine: resolve the state names into their corresponding objects.
 	 * If not called explicitely, this is called automatically the first time a transition is fired.
 	 * The only reason to call it explicitely is to avoid a delay when it is called automatically.
 	 */
-//	public void init () {
-//	if (this.inited)
-//	return;
-//	/* 
-//	* use the reflection interface to get the list of state names
-//	* use the allStates vector to map them to state objects
-//	* NOTE : this requires that the states are declared as public fields
-//	* and makes the assumption that the order of the fields as enumerated
-//	* by the reflection API is the same as the order in which the fields
-//	* are constructed.
-//	*/
-//	Class smClass = this.getClass();
-//	System.out.println("build state machine "+smClass);
-//	System.out.println(smClass.getSuperclass());
-//	Field[] publicFields = smClass.getFields();
-//	for (int i = 0; i < publicFields.length; i++) {
-//	String fieldName = publicFields[i].getName();
-//	Class fieldType = publicFields[i].getType();
-//	if (State.class.isAssignableFrom(fieldType)) {
-//	try {
-//	publicFields[i].setAccessible(true);
-//	State s = (State) publicFields[i].get(this);
-//	if (s.getName() == null) 
-//	s.setName(fieldName.intern());
-//	allStates.add(s);
-//	System.out.println("\tadd state "+s.getName());
+	protected void initStatesAndTransitions () {
 
-//	if(initialState == null){
-//	currentState = s;
-//	initialState = s;
-//	}
-//	s.setMachine(this);
-
-//	// *** Begin initialisation transitions for state s *** //
-//	Class stateClass = s.getClass();
-//	LinkedList<Field> allFields = new LinkedList<Field>();
-//	Class tmp = stateClass;
-//	// collect all the fields of super classes between this class 
-//	// and the State class to collect all the declared transitions.
-//	// Example:
-//	// class SelectionState extends State {
-//	//		Transition t1;
-//	// }
-//	// [...]
-//	// State s = new SelectionState() {
-//	//		Transition t2;
-//	// }
-//	// => s must contain the transitions t1 and t2
-//	while(State.class.isAssignableFrom(tmp.getSuperclass())) {
-//	Field[] fields = tmp.getDeclaredFields();
-//	for(int cpt = 0; cpt < fields.length; cpt++) {
-//	allFields.add(fields[cpt]);
-//	}
-//	tmp = tmp.getSuperclass();
-//	}
-//	for (int j = 0; j < allFields.size(); j++) {
-//	Class fieldStateType = allFields.get(j).getType();
-//	if (Transition.class.isAssignableFrom(fieldStateType)) {
-//	allFields.get(j).setAccessible(true);
-//	Transition t = (Transition) allFields.get(j).get(s);
-//	s.addTransition(t);
-//	t.setInputState(s);
-//	}
-//	}
-//	// *** End initialisation transitions for state s *** //
-
-
-//	} catch (IllegalArgumentException e) {
-//	e.printStackTrace();
-//	}
-//	catch (IllegalAccessException e) {
-//	e.printStackTrace();
-//	}
-//	// System.out.print((stateIndex > 1 ? ", ":"") + state.name);
-//	}
-//	}
-//	// System.out.println(".");
-//	inited = true;
-//	if(watcher != null) watcher.fireSMInited();
-//	}
-	public void init () {
 		if (this.inited)
 			return;
 
@@ -543,7 +473,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	}
 
 	protected Transition fireTransition(EventObject event) {
-		if(!inited) init();
+		if(!inited) initStatesAndTransitions();
 		LinkedList<Transition> trans = currentState.getTransitions();
 		Transition hasFired = null;
 		if(trans!=null){
@@ -588,7 +518,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * @return true if the transition was fired, false otherwise
 	 */
 	protected boolean fireTransition (Transition t) {
-		if(!inited) init();
+		if(!inited) initStatesAndTransitions();
 		if (! t.guard()) {
 			return false;
 		}
@@ -616,7 +546,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 */
 	public State getState(String s) throws StateNotFoundException {
 		if (! inited)
-			init();
+			initStatesAndTransitions();
 		State state = null;
 		for(Iterator<State> iterator = allStates.iterator(); iterator.hasNext(); ) {
 			State next = iterator.next();
