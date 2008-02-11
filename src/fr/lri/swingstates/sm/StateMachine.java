@@ -264,8 +264,8 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 
 	/**
 	 * Internal initialization of the state machine: resolve the state names into their corresponding objects.
-	 * If not called explicitely, this is called automatically the first time a transition is fired.
-	 * The only reason to call it explicitely is to avoid a delay when it is called automatically.
+	 * If not called explicitly, this is called automatically the first time a transition is fired.
+	 * The only reason to call it explicitly is to avoid a delay when it is called automatically.
 	 */
 	protected void initStatesAndTransitions () {
 
