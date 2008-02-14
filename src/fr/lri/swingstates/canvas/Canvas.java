@@ -426,8 +426,11 @@ public class Canvas extends JPanel implements MouseListener,
 			CStateMachine machine = i.next();
 			machine.consumes(false);
 			if (machine.isActive()) {
-				if (machine.getCurrentState() == null)
+				// because animation can fire events before the machine is initialized
+				if (machine.getCurrentState() == null) {
+					machine.initStatesAndTransitions();
 					continue;
+				}
 				for (Iterator<Transition> j = machine.getCurrentState()
 						.getTransitions().iterator(); j.hasNext();) {
 					Transition nextTrans = j.next();

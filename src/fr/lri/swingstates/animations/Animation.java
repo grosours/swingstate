@@ -309,8 +309,9 @@ public abstract class Animation {
 			}
 			step(t);
 			if(getAnimated() != null) {
-				if(getAnimated().getCanvas().isTracking(getAnimated())) 
+				if(getAnimated().getCanvas().isTracking(getAnimated())) {
 					getAnimated().getCanvas().processEvent(new VirtualCElementEvent(getAnimated()));
+				}
 			}
 		}
 	}

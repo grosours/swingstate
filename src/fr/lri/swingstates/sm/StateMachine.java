@@ -267,7 +267,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * If not called explicitly, this is called automatically the first time a transition is fired.
 	 * The only reason to call it explicitly is to avoid a delay when it is called automatically.
 	 */
-	protected void initStatesAndTransitions () {
+	public void initStatesAndTransitions () {
 
 		if (this.inited)
 			return;
@@ -290,6 +290,8 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 				try {
 					machineFields[i].setAccessible(true);
 					State s = (State) machineFields[i].get(this);
+					// it can happen when an animation is running
+					if(s == null) return;
 					if (s.getName() == null) 
 						s.setName(fieldName.intern());
 					allStates.add(s);
@@ -328,6 +330,8 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 						if (Transition.class.isAssignableFrom(fieldStateType)) {
 							allFields.get(j).setAccessible(true);
 							Transition t = (Transition) allFields.get(j).get(s);
+							// it can happen when an animation is running
+							if(t == null) return;
 							s.addTransition(t);
 //							System.out.println("\t\tadd transition "+t);
 							t.setInputState(s);
