@@ -70,7 +70,7 @@ public class MenusGestureNewCutCopyPaste extends BasicJApplet {
 		// must be attached to the japplet itself to work whereas a
 		// SwingStates canvas contains its own keylistener that processes
 		// events in state machines.
-		// In an application, we can only use the following line:
+		// In an application, we can use only the following line:
 		//    editor.requestFocus();
 		addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
