@@ -1226,6 +1226,8 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
+			if(!(me.getID() == typeEvent))
+				return false;
 			if (me.getSource() instanceof Canvas) {
 				triggeringEvent = me;
 				if(!me.hasAlreadyPicked()) {
@@ -1239,12 +1241,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		}
 
 		protected boolean matches(EventObject eventObject, int typeEvent) {
-//			return matchesIgnoreButtons(eventObject, typeEvent) && (button == Utils.button((PickerCEvent) eventObject));
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
 			if (me.getSource() instanceof Canvas) {
-				triggeringEvent = me;
 				if(!((me.getID() == typeEvent) 
 						&& (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) 
 						&& (button == Utils.button((PickerCEvent) eventObject)))) 
@@ -1254,7 +1254,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 					me.setPicked(source.pick(me.getPoint()));
 				}
 				CShape picked = me.getPicked();
-				return isSourceControlled(picked);
+				if(isSourceControlled(picked)) {
+					triggeringEvent = me;
+					return true;
+				}
 			}
 			return false;
 		}
@@ -1641,6 +1644,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
+//			System.out.println("matches leave? "+eventObject);
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			if (matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_EXITED)) {
@@ -1693,7 +1697,12 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
-			return matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_ENTERED);
+			if (!(eventObject instanceof PickerCEvent))
+				return false;
+			if (matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_ENTERED)) {
+				return true;
+			}
+			return false;
 		}
 	}
 
@@ -2633,14 +2642,17 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
+			if(!(me.getID() == typeEvent)) return false;
 			if (me.getSource() instanceof Canvas) {
-				triggeringEvent = me;
 				if(!me.hasAlreadyPicked()) {
 					Canvas source = (Canvas)me.getSource();
 					me.setPicked(source.pick(me.getPoint()));
 				}
 				CShape picked = me.getPicked();
-				return isSourceControlled(picked) && matches(getShape());
+				if(isSourceControlled(picked) && matches(me.getPicked())) {
+					triggeringEvent = me;					
+					return true;
+				}
 			}
 			return false;
 		}
@@ -2660,7 +2672,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 					me.setPicked(source.pick(me.getPoint()));
 				}
 				CShape picked = me.getPicked();
-				return isSourceControlled(picked) && matches(getShape());
+				return isSourceControlled(picked) && matches(me.getPicked());
 			}
 			return false;
 		}

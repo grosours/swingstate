@@ -489,22 +489,22 @@ public class Canvas extends JPanel implements MouseListener,
 	/**
 	 * {@inheritDoc}
 	 */
-	public void mouseExited(MouseEvent arg0) {
+	public void mouseExited(MouseEvent event) {
 		if (hasTransitionOfClass(LeaveOnShape.class)
 				|| hasTransitionOfClass(LeaveOnTag.class)) {
-			processEvent(arg0);
+			processEvent(event);
 		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void mouseDragged(MouseEvent arg0) {
+	public void mouseDragged(MouseEvent event) {
 		// Make the default picker move
-		if (arg0.getClass().equals(MouseEvent.class) && masterPicker != null) {
-			masterPicker.move(arg0.getPoint());
+		if (event.getClass().equals(MouseEvent.class) && masterPicker != null) {
+			masterPicker.move(event.getPoint());
 		}
-		pickAndProcess(arg0);
+		pickAndProcess(event);
 	}
 
 	/**
@@ -621,18 +621,19 @@ public class Canvas extends JPanel implements MouseListener,
 		CShape previousPicked = pickedShapes.remove(index);
 		pickedShapes.add(index, newPicked);
 		if (previousPicked != newPicked) {
+			long time = System.currentTimeMillis();
 			if (previousPicked != null) {
 				dispatchEvent(new PickerCEvent(this, previousPicked,
-						movedPicker, MouseEvent.MOUSE_EXITED, System
-								.currentTimeMillis(), 0, (int) movedPicker
+						movedPicker, MouseEvent.MOUSE_EXITED, time, 0, (int) movedPicker
 								.getLocation().getX(), (int) movedPicker
 								.getLocation().getY(), 0, false));
 			}
-			if (newPicked != null)
+			if (newPicked != null) {
 				dispatchEvent(new PickerCEvent(this, newPicked, movedPicker,
-						MouseEvent.MOUSE_ENTERED, System.currentTimeMillis(),
+						MouseEvent.MOUSE_ENTERED, time,
 						0, (int) movedPicker.getLocation().getX(),
 						(int) movedPicker.getLocation().getY(), 0, false));
+			}
 		}
 	}
 
