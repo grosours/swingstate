@@ -1644,7 +1644,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
-//			System.out.println("matches leave? "+eventObject);
 			if (!(eventObject instanceof PickerCEvent))
 				return false;
 			if (matchesIgnoreButtons(eventObject, MouseEvent.MOUSE_EXITED)) {

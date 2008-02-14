@@ -345,6 +345,9 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 		}
 		// System.out.println(".");
 		inited = true;
+		if(currentState == null) {
+			System.err.println("Failed in initializing the state machine "+this);
+		}
 		if(watcher != null) watcher.fireSMInited();
 	}
 
