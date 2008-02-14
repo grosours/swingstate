@@ -3,7 +3,7 @@ package fr.lri.swingstates.sm.transitions;
 import java.awt.geom.Point2D;
 import java.util.EventObject;
 
-import fr.lri.swingstates.events.VirtualPositionEvent;
+import fr.lri.swingstates.events.VirtualCanvasEvent;
 
 /**
  * A transition triggered on a location.
@@ -61,7 +61,7 @@ public class EventOnPosition extends Event {
 	 * @return the location at which the mouse event firing this transition has occured.
 	 */
 	public Point2D getPoint(){
-		return ((VirtualPositionEvent)triggeringEvent).getPoint();
+		return ((VirtualCanvasEvent)triggeringEvent).getPoint();
 	}
 	
 	/**
@@ -76,16 +76,10 @@ public class EventOnPosition extends Event {
 	 * {@inheritDoc}
 	 */
 	public boolean matches(EventObject eventObject) {
-		if(classEvent != null) {
-			if(!classEvent.isAssignableFrom(eventObject.getClass())) {
-				return false;
-			}
-		} else {
-			if(super.matches(eventObject)) {
-				if(eventObject instanceof VirtualPositionEvent) {
-					triggeringEvent = eventObject;
-					return true;
-				}
+		if(super.matches(eventObject)) {
+			if(eventObject instanceof VirtualCanvasEvent) {
+				triggeringEvent = eventObject;
+				return true;
 			}
 		}
 		return false;

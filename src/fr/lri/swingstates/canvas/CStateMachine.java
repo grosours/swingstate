@@ -17,12 +17,10 @@ import java.util.ListIterator;
 import fr.lri.swingstates.animations.ATag;
 import fr.lri.swingstates.animations.Animation;
 import fr.lri.swingstates.events.PickerCEvent;
-import fr.lri.swingstates.events.PickerEvent;
 import fr.lri.swingstates.events.Utils;
 import fr.lri.swingstates.events.VirtualAnimationEvent;
 import fr.lri.swingstates.events.VirtualCElementEvent;
-import fr.lri.swingstates.events.VirtualPositionEvent;
-import fr.lri.swingstates.events.VirtualShapeEvent;
+import fr.lri.swingstates.events.VirtualCanvasEvent;
 import fr.lri.swingstates.sm.BasicInputStateMachine;
 import fr.lri.swingstates.sm.Transition;
 import fr.lri.swingstates.sm.transitions.Event;
@@ -374,7 +372,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 *         occured.
 		 */
 		public CShape getShape() {
-			return ((VirtualShapeEvent)triggeringEvent).getShape();
+			return ((VirtualCanvasEvent)triggeringEvent).getShape();
 		}
 
 
@@ -392,7 +390,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 * {@inheritDoc}
 		 */
 		public Point2D getPoint() {
-			return ((VirtualShapeEvent)triggeringEvent).getPoint();
+			return ((VirtualCanvasEvent)triggeringEvent).getPoint();
 		}
 		
 		/**
@@ -400,15 +398,8 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 */
 		public boolean matches(EventObject eventObject) {
 			if (super.matches(eventObject)) {
-				if (eventObject instanceof VirtualShapeEvent && eventObject.getSource() instanceof Canvas) {
-					VirtualShapeEvent vse = (VirtualShapeEvent)triggeringEvent;
-					if(!vse.hasAlreadyPicked()) {
-						Canvas source = (Canvas)vse.getSource();
-						vse.setShape(source.pick(vse.getPoint()));
-					}
-					CShape picked = vse.getShape();
-					return isSourceControlled(picked);
-				}
+				VirtualCanvasEvent vse = (VirtualCanvasEvent)eventObject;
+				return vse.getShape() != null;
 			}
 			return false;
 		}
@@ -1230,10 +1221,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 				return false;
 			if (me.getSource() instanceof Canvas) {
 				triggeringEvent = me;
-				if(!me.hasAlreadyPicked()) {
-					Canvas source = (Canvas)me.getSource();
-					me.setPicked(source.pick(me.getPoint()));
-				}
+//				if(!me.hasAlreadyPicked()) {
+//					Canvas source = (Canvas)me.getSource();
+//					me.setPicked(source.pick(me.getPoint()));
+//				}
 				CShape picked = me.getPicked();
 				return isSourceControlled(picked);
 			}
@@ -1249,10 +1240,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 						&& (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) 
 						&& (button == Utils.button((PickerCEvent) eventObject)))) 
 					return false;
-				if(!me.hasAlreadyPicked()) {
-					Canvas source = (Canvas)me.getSource();
-					me.setPicked(source.pick(me.getPoint()));
-				}
+//				if(!me.hasAlreadyPicked()) {
+//					Canvas source = (Canvas)me.getSource();
+//					me.setPicked(source.pick(me.getPoint()));
+//				}
 				CShape picked = me.getPicked();
 				if(isSourceControlled(picked)) {
 					triggeringEvent = me;
@@ -2288,9 +2279,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 */
 		public boolean matches(EventObject eventObject) {
 			if (super.matches(eventObject)) {
-				if (getShape() != null) {
-					return matches(getShape());
-				}
+				return matches(((VirtualCanvasEvent)eventObject).getShape());
 			}
 			return false;
 		}
@@ -2643,10 +2632,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			PickerCEvent me = (PickerCEvent) eventObject;
 			if(!(me.getID() == typeEvent)) return false;
 			if (me.getSource() instanceof Canvas) {
-				if(!me.hasAlreadyPicked()) {
-					Canvas source = (Canvas)me.getSource();
-					me.setPicked(source.pick(me.getPoint()));
-				}
+//				if(!me.hasAlreadyPicked()) {
+//					Canvas source = (Canvas)me.getSource();
+//					me.setPicked(source.pick(me.getPoint()));
+//				}
 				CShape picked = me.getPicked();
 				if(isSourceControlled(picked) && matches(me.getPicked())) {
 					triggeringEvent = me;					
@@ -2666,10 +2655,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 						&& (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) 
 						&& (button == Utils.button((PickerCEvent) eventObject)))) 
 					return false;
-				if(!me.hasAlreadyPicked()) {
-					Canvas source = (Canvas)me.getSource();
-					me.setPicked(source.pick(me.getPoint()));
-				}
+//				if(!me.hasAlreadyPicked()) {
+//					Canvas source = (Canvas)me.getSource();
+//					me.setPicked(source.pick(me.getPoint()));
+//				}
 				CShape picked = me.getPicked();
 				return isSourceControlled(picked) && matches(me.getPicked());
 			}

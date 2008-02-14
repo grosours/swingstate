@@ -15,31 +15,41 @@ import fr.lri.swingstates.canvas.CShape;
  * @author Caroline Appert
  *
  */
-public class VirtualShapeEvent extends VirtualPositionEvent {
+public class VirtualCanvasEvent extends VirtualEvent {
 
-	private boolean hasAlreadyPicked = false;
-	CShape cshape;
-	int modifier;
+	private CShape cshape;
+	private int modifier;
+	private Point2D point;
 	
-	public boolean hasAlreadyPicked() {
-		return hasAlreadyPicked;
+	/**
+	 * Builds a <code>VirtualShapeEvent</code>.
+	 * @param pt The point on which this event occured.
+	 */
+	public VirtualCanvasEvent(Point2D pt) {
+		super("");
+		point = pt;
 	}
-
-	public void setShape(CShape shape) {
-		this.cshape = shape;
-		hasAlreadyPicked = true;
+	
+	/**
+	 * Builds a <code>VirtualShapeEvent</code>.
+	 * @param n The name of the event.
+	 * @param pt The point on which this event occured.
+	 */
+	public VirtualCanvasEvent(String n, Point2D pt) {
+		super(n);
+		point = pt;
 	}
-
+	
 	/**
 	 * Builds a <code>VirtualShapeEvent</code>.
 	 * @param n The name of the event.
 	 * @param shape The <code>CShape</code>.
 	 * @param pt The point on which this event occured.
 	 */
-	public VirtualShapeEvent(String n, CShape shape, Point2D pt) {
-		super(n, pt);
+	public VirtualCanvasEvent(String n, CShape shape, Point2D pt) {
+		super(n);
+		point = pt;
 		cshape = shape;
-		hasAlreadyPicked = true;
 	}
 	
 	/**
@@ -47,8 +57,9 @@ public class VirtualShapeEvent extends VirtualPositionEvent {
 	 * @param shape The <code>CShape</code>.
 	 * @param pt The point on which this event occured.
 	 */
-	public VirtualShapeEvent(CShape shape, Point2D pt) {
-		super("", pt);
+	public VirtualCanvasEvent(CShape shape, Point2D pt) {
+		super("");
+		point = pt;
 		cshape = shape;
 	}
 	
@@ -72,5 +83,13 @@ public class VirtualShapeEvent extends VirtualPositionEvent {
 	public int getModifier() {
 		return modifier;
 	}
-
+	
+	/**
+	 * Sets the picked shape for this event.
+	 * @param shape The picked shape
+	 */
+	public void setShape(CShape shape) {
+		this.cshape = shape;
+	}
+	
 }

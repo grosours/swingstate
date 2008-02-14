@@ -49,6 +49,8 @@ import fr.lri.swingstates.canvas.CStateMachine.DragOnShape;
 import fr.lri.swingstates.canvas.CStateMachine.DragOnTag;
 import fr.lri.swingstates.canvas.CStateMachine.EnterOnShape;
 import fr.lri.swingstates.canvas.CStateMachine.EnterOnTag;
+import fr.lri.swingstates.canvas.CStateMachine.EventOnShape;
+import fr.lri.swingstates.canvas.CStateMachine.EventOnTag;
 import fr.lri.swingstates.canvas.CStateMachine.LeaveOnShape;
 import fr.lri.swingstates.canvas.CStateMachine.LeaveOnTag;
 import fr.lri.swingstates.canvas.CStateMachine.MoveOnShape;
@@ -61,8 +63,7 @@ import fr.lri.swingstates.events.Picker;
 import fr.lri.swingstates.events.PickerCEvent;
 import fr.lri.swingstates.events.PickerEvent;
 import fr.lri.swingstates.events.VirtualEvent;
-import fr.lri.swingstates.events.VirtualPositionEvent;
-import fr.lri.swingstates.events.VirtualShapeEvent;
+import fr.lri.swingstates.events.VirtualCanvasEvent;
 import fr.lri.swingstates.sm.Transition;
 import fr.lri.swingstates.sm.transitions.Enter;
 
@@ -328,8 +329,8 @@ public class Canvas extends JPanel implements MouseListener,
 	public void processEvent(String event, Point2D pt) {
 		boolean isConsumed = false;
 		CShape picked = pick(pt);
-		VirtualEvent toProcess = picked != null ? new VirtualShapeEvent(event,
-				picked, pt) : new VirtualShapeEvent(event, null, pt);
+		VirtualEvent toProcess = picked != null ? new VirtualCanvasEvent(event,
+				picked, pt) : new VirtualCanvasEvent(event, null, pt);
 
 		for (Iterator i = stateMachines.iterator(); i.hasNext();) {
 			if (isConsumed)
@@ -347,12 +348,22 @@ public class Canvas extends JPanel implements MouseListener,
 	 * Processes an event to all the state machines that monitor this canvas, a
 	 * shape in this canvas or a tag attached to shapes in this canvas.
 	 * 
+	 * If <code>virtualEvent</code> has the type <code>VirtualCanvasEvent</code>,
+	 * this method performs picking on the canvas so transitions <code>EventOnShape</code>
+	 * and <code>EventOnTag</code> can be triggered.
+	 * 
 	 * @param virtualEvent
 	 *            The virtual event to process.
 	 */
 	public void processEvent(VirtualEvent virtualEvent) {
 		boolean isConsumed = false;
 		virtualEvent.setSource(this);
+		if(virtualEvent instanceof VirtualCanvasEvent) {
+			if (hasTransitionOfClass(EventOnShape.class)
+					|| hasTransitionOfClass(EventOnTag.class)) {
+				((VirtualCanvasEvent)virtualEvent).setShape(pick(((VirtualCanvasEvent)virtualEvent).getPoint()));
+			}
+		}
 		for (Iterator i = stateMachines.iterator(); i.hasNext();) {
 			if (isConsumed)
 				break;
