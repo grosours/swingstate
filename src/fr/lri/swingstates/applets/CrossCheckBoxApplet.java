@@ -53,7 +53,7 @@ public class CrossCheckBoxApplet extends JApplet {
 						.setAntialiased(true);
 			}
 
-			public State off = new State() {
+			State off = new State() {
 				Transition press = new Press(BUTTON1, ">> on") {
 					public void action() {
 						ptInit.setLocation(getPoint());
@@ -63,7 +63,7 @@ public class CrossCheckBoxApplet extends JApplet {
 					}
 				};
 			};
-			public State on = new State() {
+			State on = new State() {
 				Transition drag = new Drag(BUTTON1) {
 					public void action() {
 						ink.setPoints(ptInit, getPoint());

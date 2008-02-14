@@ -101,6 +101,26 @@ public class GestureFactory {
 		return gesture;
 	}
 	
+	public static Vector<Point2D> getCrossGesture() {
+		Vector<Point2D> gesture = new Vector<Point2D>();
+		gesture.add(new Point2D.Double(0, 50));
+		gesture.add(new Point2D.Double(100, 50));
+		gesture.add(new Point2D.Double(100, 50));
+		
+		GeneralPath gp = new GeneralPath();
+		gp.moveTo(0, 50);
+		gp.quadTo(0, 100, 50, 100);
+		gp.quadTo(100, 100, 100, 50);
+		double[] coords = new double[6];
+		for (PathIterator pi = gp.getPathIterator(null, 1); ! pi.isDone(); pi.next()) {
+			pi.currentSegment(coords);
+			gesture.add(new Point2D.Double(coords[0], coords[1]));
+        }
+		
+		gesture.add(new Point2D.Double(100, 0));
+		return gesture;
+	}
+	
 	static void createClassifierTest() {
 		ShapeMatchingClassifier d1c = new ShapeMatchingClassifier();
 		
