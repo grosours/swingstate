@@ -280,11 +280,8 @@ public class ShapeMatchingClassifier {
 
 		new CStateMachine(canvas) {
 			CPolyLine ink;
-//			= (CPolyLine) canvas.newPolyLine().setFilled(false);
 			Gesture gest;
-//			= new Gesture();
 			CText recognized;
-//			= canvas.newText(20, 20, "");
 
 			public void init() {
 				ink = (CPolyLine) canvas.newPolyLine().setFilled(false);
