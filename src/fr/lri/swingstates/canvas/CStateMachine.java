@@ -1238,12 +1238,8 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if (me.getSource() instanceof Canvas) {
 				if(!((me.getID() == typeEvent) 
 						&& (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) 
-						&& (button == Utils.button((PickerCEvent) eventObject)))) 
+						&& (button == ANYBUTTON || button == Utils.button((PickerCEvent) eventObject)))) 
 					return false;
-//				if(!me.hasAlreadyPicked()) {
-//					Canvas source = (Canvas)me.getSource();
-//					me.setPicked(source.pick(me.getPoint()));
-//				}
 				CShape picked = me.getPicked();
 				if(isSourceControlled(picked)) {
 					triggeringEvent = me;
@@ -2653,12 +2649,8 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 				triggeringEvent = me;
 				if(!((me.getID() == typeEvent) 
 						&& (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) 
-						&& (button == Utils.button((PickerCEvent) eventObject)))) 
+						&& (button == ANYBUTTON || button == Utils.button((PickerCEvent) eventObject)))) 
 					return false;
-//				if(!me.hasAlreadyPicked()) {
-//					Canvas source = (Canvas)me.getSource();
-//					me.setPicked(source.pick(me.getPoint()));
-//				}
 				CShape picked = me.getPicked();
 				return isSourceControlled(picked) && matches(me.getPicked());
 			}

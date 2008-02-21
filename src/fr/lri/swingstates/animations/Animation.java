@@ -176,7 +176,7 @@ public abstract class Animation {
 	 * @return This animation.
 	 */
 	public final synchronized Animation start() {
-		if(animated == null) return this;
+//		if(animated == null) return this;
 		t = 0;
 		elapsed = 0;
 		startTime = AnimationManager.getInstance().getCurrentTime();

@@ -237,10 +237,10 @@ public class CShape implements Cloneable, CElement {
 		}
 
 		// remove tags
-		LinkedList canvasTags = canvas.allCanvasTags;
+		LinkedList<CTag> canvasTags = canvas.allCanvasTags;
 		if (canvasTags != null) {
-			for (Iterator i = canvasTags.iterator(); i.hasNext();) {
-				Object next = i.next();
+			for (Iterator<CTag> i = canvasTags.iterator(); i.hasNext();) {
+				CTag next = i.next();
 				if (next instanceof CExtensionalTag) {
 					CExtensionalTag extTag = (CExtensionalTag) next;
 					if (extTag.tagsShape(this))
@@ -336,6 +336,28 @@ public class CShape implements Cloneable, CElement {
 		return this;
 	}
 
+	/**
+	 * Copies style attributes of a given CShape on this CShape.
+	 * (filled [yes/no], fill color, transparentFill,
+	 * outlined [yes/no], outline color, transparentOutline,
+	 * stroke).
+	 * 
+	 * @param picked
+	 *            The <code>CShape</code> on which the style attributes must be picked.
+	 * @return this shape.
+	 */
+	public CElement pickStyle(CShape picked) {
+		this.filled = picked.filled;
+		this.fillPaint = picked.fillPaint;
+		this.outlined = picked.outlined;
+		this.outlinePaint = picked.outlinePaint;
+		this.stroke = picked.stroke;
+		this.transparencyFill = picked.transparencyFill;
+		this.transparencyOutline = picked.transparencyOutline;
+		repaint();
+		return this;
+	}
+	
 	/**
 	 * Sets the <code>transparencyFill</code> of this shape, which applies to
 	 * the interior.
@@ -664,7 +686,7 @@ public class CShape implements Cloneable, CElement {
 	 * 
 	 * @return the children of this shape, or null if it has no parent.
 	 */
-	public LinkedList getChildren() {
+	public LinkedList<CShape> getChildren() {
 		return children;
 	}
 
@@ -731,11 +753,11 @@ public class CShape implements Cloneable, CElement {
 	 * 
 	 * @return the previous children of this shape.
 	 */
-	public LinkedList removeAllChildren() {
+	public LinkedList<CShape> removeAllChildren() {
 		if(children == null) return null;
-		LinkedList exChildren = (LinkedList) children.clone();
+		LinkedList<CShape> exChildren = new LinkedList<CShape>();
 		for (int i = getChildrenCount() - 1; i >= 0; i--) {
-			removeChild(i);
+			exChildren.add(removeChild(i));
 		}
 		return exChildren;
 	}
@@ -772,8 +794,7 @@ public class CShape implements Cloneable, CElement {
 	}
 
 	/**
-	 * Adds a child to this shape. This shape becomes the parent of the shape
-	 * given as parameter.
+	 * Adds a child to this shape. 
 	 * 
 	 * @param c
 	 *            The child shape
@@ -799,7 +820,7 @@ public class CShape implements Cloneable, CElement {
 		return this;
 	}
 
-	// ____________________________________ TRANSFORMATIONS
+	// ______________ TRANSFORMATIONS __________________
 	// _________________________________________________
 
 	/**
@@ -885,11 +906,6 @@ public class CShape implements Cloneable, CElement {
 		transform.rotate(theta);
 		transform.scale(sx, sy);
 		transform.translate(-dx, -dy);
-
-		// if(children != null) {
-		// for(Iterator<CShape> i = children.iterator(); i.hasNext(); )
-		// i.next().computeTransform();
-		// }
 		computeAbsTransform();
 	}
 
@@ -898,7 +914,7 @@ public class CShape implements Cloneable, CElement {
 	void changedTransform() {
 		computeTransform();
 		if (children != null)
-			for (Iterator i = children.iterator(); i.hasNext();)
+			for (Iterator<CShape> i = children.iterator(); i.hasNext();)
 				((CShape) (i.next())).changedTransform();
 		repaint();
 	}
