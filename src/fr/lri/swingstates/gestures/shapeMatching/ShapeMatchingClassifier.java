@@ -1,5 +1,6 @@
 package fr.lri.swingstates.gestures.shapeMatching;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.geom.Point2D;
 import java.io.DataInputStream;
@@ -16,7 +17,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
 
+import fr.lri.swingstates.animations.Animation;
 import fr.lri.swingstates.canvas.CPolyLine;
+import fr.lri.swingstates.canvas.CSegment;
 import fr.lri.swingstates.canvas.CShape;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.CText;
@@ -60,7 +63,6 @@ public class ShapeMatchingClassifier {
 		int cpt = 0;
 		for (Iterator<Vector<Point2D>> templatesIterator = classTemplates.iterator(); templatesIterator.hasNext();) {
 			Vector<Point2D> next = templatesIterator.next();
-//			currentScore = Dollar1Utils.distanceAtBestAngle(inputPointsResampled, next, -theta, theta, deltaTheta);
 			currentScore = Dollar1Utils.pathDistance(inputPointsResampled, next);
 			if (currentScore < minScore) {
 				minScore = currentScore;
@@ -73,6 +75,37 @@ public class ShapeMatchingClassifier {
 		if (currentDistance > maximumDistance)
 			return null;
 		return classNames.get(match);
+	}
+	
+	public ClassifiedAndResampled classifyAndResample(Gesture g) {
+		double minScore = Double.MAX_VALUE;
+		double currentScore;
+		
+		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
+		Dollar1Utils.resample(g.getPoints(), nbPoints, inputPointsResampled);
+		Vector<Point2D> inputPointsResampledCopy = new Vector<Point2D>();
+		for (Iterator<Point2D> iterator = inputPointsResampled.iterator(); iterator.hasNext(); )
+			inputPointsResampledCopy.add((Point2D)iterator.next().clone());
+		Dollar1Utils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
+		Dollar1Utils.translateToOrigin(inputPointsResampled, inputPointsResampled);
+
+		int match = 0;
+		int cpt = 0;
+		for (Iterator<Vector<Point2D>> templatesIterator = classTemplates.iterator(); templatesIterator.hasNext();) {
+			Vector<Point2D> next = templatesIterator.next();
+			currentScore = Dollar1Utils.pathDistance(inputPointsResampled, next);
+			if (currentScore < minScore) {
+				minScore = currentScore;
+				match = cpt;
+			}
+			cpt++;
+		}
+
+		currentDistance = minScore;
+		if (currentDistance > maximumDistance)
+			return null;
+//		return classNames.get(match);
+		return new ClassifiedAndResampled(classNames.get(match), inputPointsResampledCopy);
 	}
 
 	/**
@@ -273,52 +306,5 @@ public class ShapeMatchingClassifier {
 		canvas.setPreferredSize(new Dimension((int)xMax, (int)yMax));
 		return canvas;
 	}
-
-	public Canvas getRecognitionArea(int width, int height) {
-		final Canvas canvas = new Canvas(width, height);
-
-
-		new CStateMachine(canvas) {
-			CPolyLine ink;
-			Gesture gest;
-			CText recognized;
-
-			public void init() {
-				ink = (CPolyLine) canvas.newPolyLine().setFilled(false);
-				gest = new Gesture();
-				recognized = canvas.newText(20, 20, "");
-			}
-
-			public State start = new State("start") {
-				Transition press = new Press(BUTTON1, "==> draw") {
-					public void action() {
-						ink.reset(getPoint().getX(), getPoint().getY());
-						gest.reset();
-						gest.addPoint((int) getPoint().getX(), (int) getPoint().getY());
-					}
-				};
-			};
-
-			public State draw = new State("draw") {
-				Transition drag = new Drag(BUTTON1) {
-					public void action() {
-						ink.lineTo((float) getPoint().getX(), (float) getPoint().getY());
-						gest.addPoint((int) getPoint().getX(), (int) getPoint().getY());
-					}
-				};
-				Transition release = new Release(BUTTON1, "==> start") {
-					public void action() {
-						ink.lineTo((float) getPoint().getX(), (float) getPoint().getY());
-						gest.addPoint((int) getPoint().getX(), (int) getPoint().getY());
-						String className = classify(gest);
-						System.out.println(className);
-						if(className == null) className = "null";
-						recognized.setText(className);
-					}
-				};
-			};
-		};
-		return canvas;
-	}
-
+	
 }
