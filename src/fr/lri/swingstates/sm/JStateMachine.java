@@ -918,7 +918,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
-			&& (button == Utils.button(me));
+			&& (button == ANYBUTTON || button == Utils.button(me));
 		}
 	}
 
@@ -1545,7 +1545,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
-			&& (button == Utils.button(me))
+			&& (button == ANYBUTTON || button == Utils.button(me))
 			&& matches();
 		}
 	}
