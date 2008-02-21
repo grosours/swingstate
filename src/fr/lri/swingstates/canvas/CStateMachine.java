@@ -105,13 +105,47 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	}
 
 	/**
-	 * Attaches a state machine to a given control attachable object.
+	 * Attaches a state machine to a given <code>CElement</code>. Attaching a CStateMachine to 
+	 * a CElement (a shape, a tag or a canvas) causes the transitions *OnShape and *OnTag
+	 * (e.g. PressOnShape, PressOnTag, ReleaseOnShape...)
+	 * to be fired only on shapes that are parts of the attached element. Note that 
+	 * all other transitions that can occur anywhere (e.g. Press, Release...) remains <i>firable</i>.
+	 * 
+	 * <p>
+	 * For example, the transition <code>t1</code> will be fired only if a mouse press occurs on
+	 * a shape that holds the tag <code>movable</code> while the transition <code>t2</code> will still be
+	 * fired by any mouse press event on the canvas:
+	 * </p>
+	 * <pre>
+	 * CStateMachine machine = new CStateMachine() {
+	 *    State start = new State() {
+	 *       Transition t1 = new PressOnShape(BUTTON1, ">> moveShape") {
+	 *       	...
+	 *       };
+	 *       Transition t2 = new Press(BUTTON1, ">> panView") {
+	 *       	...
+	 *       };
+	 *    };
+	 *    State moveShape = new State() {
+	 *       ...
+	 *    };
+	 *    State panView = new State() {
+	 *       ...
+	 *    };
+	 *    ...
+	 * };
+	 * ...
+	 * CTag movable = ...;
+	 * ...
+	 * machine.attachTo(movable);
+	 * </pre>
 	 * 
 	 * @param ce
-	 *            The <code>CElement</code> object to which this state machine
-	 *            must be linked
+	 *            The <code>CElement</code> to which this state machine
+	 *            must be attached.
 	 * @param reset
-	 *            Whether to reset the state machine once attached
+	 *            Whether or not the state machine must be reset.
+	 *            
 	 */
 	public void attachTo(CElement ce, boolean reset) {
 		if (controlledObjects == null)
@@ -126,12 +160,14 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	}
 
 	/**
-	 * Attaches a state machine to a given <code>CElement</code> object and
+	 * Attaches a state machine to a given <code>CElement</code> and
 	 * resets it.
 	 * 
 	 * @param ce
-	 *            The <code>CElement</code> object to which this state machine
-	 *            must be linked
+	 *            The <code>CElement</code> to which this state machine
+	 *            must be attached.
+	 * 
+	 * @see CStateMachine#attachTo(CElement, boolean)
 	 */
 	public void attachTo(CElement ce) {
 		attachTo(ce, true);
@@ -156,7 +192,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	 * @return the linked list of <code>CElement</code> objects to which this
 	 *         state machine is attached.
 	 */
-	public LinkedList getControlledObjects() {
+	public LinkedList<CElement> getControlledObjects() {
 		if (controlledObjects == null)
 			return null;
 		if (controlledObjects.size() == 0)
@@ -2167,8 +2203,8 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		}
 
 		/**
-		 * Returns the name of the tag attached to the CShape on which the mouse
-		 * event firing this transition has occured.
+		 * Returns the name of the tag hold by the CShape on which the mouse
+		 * event firing this transition has occurred.
 		 * 
 		 * @return name of the tag.
 		 */
@@ -2177,8 +2213,8 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		}
 
 		/**
-		 * Returns the tag instance attached to the CShape on which the mouse
-		 * event firing this transition has occured.
+		 * Returns the tag instance hold by the CShape on which the mouse
+		 * event firing this transition has occurred.
 		 * 
 		 * @return the tag instance.
 		 */
@@ -2186,35 +2222,14 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			return tagObject;
 		}
 
-		/**
-		 * Stores the tag instance attached to the CShape on which the mouse
-		 * event firing this transition has occured (dynamically).
-		 * 
-		 * @param tag
-		 *            The tag instance
-		 */
 		void setTagObject(CTag tag) {
 			tagObject = tag;
 		}
 
-		/**
-		 * Stores the tag class attached to the CShape on which the mouse event
-		 * firing this transition has occured (dynamically).
-		 * 
-		 * @param tagClass
-		 *            The tag class
-		 */
 		void setTagClass(Class tagClass) {
 			this.tagClass = tagClass;
 		}
 
-		/**
-		 * Stores the tag name attached to the CShape on which the mouse event
-		 * firing this transition has occured (dynamically).
-		 * 
-		 * @param tagName
-		 *            The tag name
-		 */
 		void setTagName(String tagName) {
 			this.tagName = tagName;
 		}
@@ -2239,7 +2254,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if (!isSourceControlled(source))
 				return false;
 			if (isDesignedByClass && source.getCanvas().allCanvasTags != null) {
-				for (Iterator it = source.getCanvas().allCanvasTags.iterator(); it.hasNext();) {
+				for (Iterator<CTag> it = source.getCanvas().allCanvasTags.iterator(); it.hasNext();) {
 					CTag o = (CTag) it.next();
 					if (tagClass.isAssignableFrom(o.getClass())) {
 						if (source.hasTag(o)) {
@@ -2284,7 +2299,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	/**
 	 * A transition triggered by a mouse event on a tagged shape in the canvas.
 	 * The transition is specialized by a button and modifiers. Constants used
-	 * for button and modifier are in <code>BasicInputStateMachine</code>.
+	 * for button and modifier are static fields in <code>BasicInputStateMachine</code>.
 	 * 
 	 * @author Caroline Appert
 	 * 
@@ -2491,7 +2506,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		}
 
 		/**
-		 * Builds a mouse transition with no modifier on tagged shape that loops
+		 * Builds a mouse transition with no modifier on a tagged shape that loops
 		 * on the current state.
 		 * 
 		 * @param tagName
@@ -2628,10 +2643,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			PickerCEvent me = (PickerCEvent) eventObject;
 			if(!(me.getID() == typeEvent)) return false;
 			if (me.getSource() instanceof Canvas) {
-//				if(!me.hasAlreadyPicked()) {
-//					Canvas source = (Canvas)me.getSource();
-//					me.setPicked(source.pick(me.getPoint()));
-//				}
 				CShape picked = me.getPicked();
 				if(isSourceControlled(picked) && matches(me.getPicked())) {
 					triggeringEvent = me;					
@@ -2660,7 +2671,8 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	}
 
 	/**
-	 * A transition triggered when the cursor enters in a CShape with a given
+	 * A transition triggered when the cursor enters in a CShape 
+	 * that holds a given
 	 * tag.
 	 * 
 	 * @author Caroline Appert

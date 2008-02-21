@@ -258,10 +258,9 @@ public class CShape implements Cloneable, CElement {
 
 	// mark the shape to be repainted
 	protected void repaint() {
-		if (canvas != null) {
+		if (canvas != null && drawable) {
 			canvas.repaint();
 		}
-
 	}
 
 	// ____________________________________ DRAWING
