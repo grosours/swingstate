@@ -21,6 +21,7 @@ import fr.lri.swingstates.events.Utils;
 import fr.lri.swingstates.events.VirtualAnimationEvent;
 import fr.lri.swingstates.events.VirtualCElementEvent;
 import fr.lri.swingstates.events.VirtualCanvasEvent;
+import fr.lri.swingstates.events.VirtualEvent;
 import fr.lri.swingstates.sm.BasicInputStateMachine;
 import fr.lri.swingstates.sm.Transition;
 import fr.lri.swingstates.sm.transitions.Event;
@@ -464,7 +465,8 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 
 		protected Animation animation = null;
 		protected ATag tagAnimation = null;
-
+		protected boolean genericAnimation = true;
+		
 		/**
 		 * Builds a transition triggered by any animation that loops on the
 		 * current state.
@@ -492,6 +494,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		protected AnimationEvent(String keyEvent, Animation anim) {
 			super(keyEvent);
 			animation = anim;
+			genericAnimation = false;
 		}
 
 		/**
@@ -508,6 +511,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		protected AnimationEvent(String keyEvent, ATag tagAnim) {
 			super(keyEvent);
 			tagAnimation = tagAnim;
+			genericAnimation = false;
 		}
 
 		/**
@@ -539,6 +543,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		protected AnimationEvent(String keyEvent, Animation anim, String outState) {
 			super(keyEvent, outState);
 			animation = anim;
+			genericAnimation = false;
 		}
 
 		/**
@@ -556,6 +561,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		protected AnimationEvent(String keyEvent, ATag tagAnim, String outState) {
 			super(keyEvent, outState);
 			tagAnimation = tagAnim;
+			genericAnimation = false;
 		}
 
 		/**
@@ -594,7 +600,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 					}
 				} else {
 					// generic transition
-					if (animation == null) {
+					if (genericAnimation) {
 						animation = triggeringAnimation;
 						return true;
 						// transition for a given animation

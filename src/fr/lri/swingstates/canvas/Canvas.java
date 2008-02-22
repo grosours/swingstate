@@ -364,10 +364,10 @@ public class Canvas extends JPanel implements MouseListener,
 				((VirtualCanvasEvent)virtualEvent).setShape(pick(((VirtualCanvasEvent)virtualEvent).getPoint()));
 			}
 		}
-		for (Iterator i = stateMachines.iterator(); i.hasNext();) {
+		for (Iterator<CStateMachine> i = stateMachines.iterator(); i.hasNext();) {
 			if (isConsumed)
 				break;
-			CStateMachine machine = (CStateMachine) i.next();
+			CStateMachine machine = i.next();
 			machine.consumes(false);
 			if (machine.getCurrentState() == null)
 				continue;

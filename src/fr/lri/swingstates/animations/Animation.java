@@ -6,6 +6,7 @@
 package fr.lri.swingstates.animations;
 
 import fr.lri.swingstates.canvas.CElement;
+import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.events.VirtualAnimationEvent;
 import fr.lri.swingstates.events.VirtualCElementEvent;
 
@@ -91,6 +92,8 @@ public abstract class Animation {
 	private long   nextStepTime;
 	
 	private boolean suspended;
+	
+	private Canvas canvas;
 	/**
 	 * Builds an animation and registers it to the animation manager.
 	 */
@@ -156,11 +159,14 @@ public abstract class Animation {
 	
 	/**
 	 * Sets the <code>CElement</code> that must be animated by this animation.
+	 * If the canvas that must received animation events has not yet been set,
+	 * it is set to the canvas to which belongs this <code>CElement</code>.
 	 * @param ce The <code>CElement</code> to animate.
 	 * @return this animation.
 	 */
 	public synchronized Animation setAnimatedElement(CElement ce) {
 		animated = ce;
+		if(canvas == null) canvas = animated.getCanvas();
 		return this;
 	}
 	
@@ -251,8 +257,9 @@ public abstract class Animation {
 	}
 
 	void processAnimationEvent(String event){
-		if(animated != null)
-			animated.getCanvas().processEvent(new VirtualAnimationEvent(event, this));
+		if(canvas != null) {
+			canvas.processEvent(new VirtualAnimationEvent(event, this));
+		}
 	}
 	
 	/**
@@ -418,6 +425,13 @@ public abstract class Animation {
 	 */
 	public boolean isSuspended() {
 		return suspended;
+	}
+	
+	/**
+	 * @param canvas Sets the canvas on which will be fired animation events.
+	 */
+	public void setCanvas(Canvas canvas) {
+		this.canvas = canvas;
 	}
 
 }
