@@ -21,7 +21,7 @@ import fr.lri.swingstates.gestures.Score;
 
 public class ShapeMatchingClassifier extends AbstractClassifier {
 	
-	class ClassifiedAndResampled {
+	protected class ClassifiedAndResampled {
 
 		private String className;
 		private Vector<Point2D> resampled;
