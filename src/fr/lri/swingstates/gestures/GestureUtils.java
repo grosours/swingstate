@@ -3,7 +3,7 @@
  *   Copyright (c) Universite Paris-Sud XI, 2007. All Rights Reserved
  *   Licensed under the GNU LGPL. For full terms see the file COPYING.
 */
-package fr.lri.swingstates.gestures.dollar1;
+package fr.lri.swingstates.gestures;
 
 /*******************************************************************************
  * The algorithm and original C# code are from:
@@ -13,23 +13,26 @@ package fr.lri.swingstates.gestures.dollar1;
  * prototypes. In proc.UIST'07.
  ******************************************************************************/
 
+import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.Iterator;
 import java.util.Vector;
 
+import fr.lri.swingstates.canvas.CEllipse;
 import fr.lri.swingstates.canvas.CPolyLine;
+import fr.lri.swingstates.canvas.CRectangle;
+import fr.lri.swingstates.canvas.CShape;
+import fr.lri.swingstates.canvas.Canvas;
 
 /**
- * A class containing utility methods for the $1 recognizer.
+ * A class containing utility methods for sets of points.
  * 
  * @author Caroline Appert
  *
  */
-public class Dollar1Utils {
+public class GestureUtils {
 
-	private Dollar1Utils() { }
-	
 	public static double pathLength(Vector<Point2D> points) {
 		double d = 0;
 		for (int i = 1; i < points.size(); i++) {
@@ -233,4 +236,113 @@ public class Dollar1Utils {
 		}
 		return polyline;
 	}
+	
+	/**
+	 * Displays a polyline of a gesture example in a bounding box in a
+	 * SwingStates <code>Canvas</code>. The gesture is displayed with a red
+	 * circle at its start point and an orange arrow head at its end point.
+	 * 
+	 * @param canvas
+	 *            The SwingStates <code>Canvas</code>.
+	 * @param polyline
+	 *            The polyline of gesture example.
+	 * @param x
+	 *            The x-coordinate of the bounding box upper left corner in
+	 *            canvas coordinate system.
+	 * @param y
+	 *            The y-coordinate of the bounding box upper left corner in
+	 *            canvas coordinate system.
+	 * @param sizeBoundingBox
+	 *            The size of the bounding box side of this gesture example.
+	 * @param sizeSpan
+	 *            The blank space between bounding box and this gesture.
+	 * @param sizeStartPoint
+	 *            The size of the red starting circle.
+	 * 
+	 * @return the polyline for this gesture example that has been added to the
+	 *         canvas.
+	 */
+	public static CShape showArrowPreview(Canvas canvas, CPolyLine polyline, int x, int y, int sizeBoundingBox, int sizeSpan, double sizeStartPoint) {
+		double maxSide = Math.max(polyline.getHeight(), polyline.getWidth());
+		double dscale = (sizeBoundingBox - 2 * sizeSpan) / maxSide;
+		CRectangle gestureBB = canvas.newRectangle(x, y, sizeBoundingBox, sizeBoundingBox);
+		CPolyLine exampleView = (CPolyLine) polyline.duplicate().setFilled(false);
+
+		Canvas initialCanvas = exampleView.getCanvas();
+		if (initialCanvas != null)
+			initialCanvas.removeShape(exampleView);
+		canvas.addShape(exampleView);
+		exampleView.scaleBy(dscale).setReferencePoint(0.5, 0.5).translateBy(x + sizeBoundingBox / 2 - exampleView.getCenterX(), y + sizeBoundingBox / 2 - exampleView.getCenterY());
+
+		gestureBB.setFillPaint(new Color(250, 240, 230));
+
+		exampleView.fixReferenceShapeToCurrent().setPickable(false);
+
+		gestureBB.fixReferenceShapeToCurrent().setOutlined(false);
+		CEllipse startPoint = canvas.newEllipse(exampleView.getStartX() - sizeStartPoint / 2, exampleView.getStartY() - sizeStartPoint / 2, sizeStartPoint, sizeStartPoint);
+		startPoint.setFillPaint(Color.ORANGE).setOutlinePaint(Color.ORANGE).setPickable(false);
+
+		CPolyLine arrow = exampleView.getArrow(Math.PI / 4, 4);
+		arrow.setOutlinePaint(Color.RED);
+		canvas.addShape(arrow);
+		arrow.setParent(exampleView);
+
+		gestureBB.addChild(exampleView);
+		exampleView.addChild(startPoint);
+
+		return gestureBB;
+	}
+	
+	/**
+	 * Displays a polyline of a gesture example in a bounding box in a
+	 * SwingStates <code>Canvas</code>. The gesture is displayed with a red
+	 * circle at its start point.
+	 * 
+	 * @param canvas
+	 *            The SwingStates <code>Canvas</code>.
+	 * @param polyline
+	 *            The polyline of gesture example.
+	 * @param x
+	 *            The x-coordinate of the bounding box upper left corner in
+	 *            canvas coordinate system.
+	 * @param y
+	 *            The y-coordinate of the bounding box upper left corner in
+	 *            canvas coordinate system.
+	 * @param sizeBoundingBox
+	 *            The size of the bounding box side of this gesture example.
+	 * @param sizeSpan
+	 *            The blank space between bounding box and this gesture.
+	 * @param sizeStartPoint
+	 *            The size of the red starting circle.
+	 * 
+	 * @return the polyline for this gesture example that has been added to the
+	 *         canvas.
+	 */
+	public static CShape showPreview(Canvas canvas, CPolyLine polyline, int x, int y, int sizeBoundingBox, int sizeSpan, double sizeStartPoint) {
+		double maxSide = Math.max(polyline.getHeight(), polyline.getWidth());
+		double dscale = (sizeBoundingBox - 2 * sizeSpan) / maxSide;
+		CRectangle gestureBB = canvas.newRectangle(x, y, sizeBoundingBox, sizeBoundingBox);
+		CPolyLine exampleView = (CPolyLine) polyline.duplicate().setFilled(false);
+
+		Canvas initialCanvas = exampleView.getCanvas();
+		if (initialCanvas != null)
+			initialCanvas.removeShape(exampleView);
+		canvas.addShape(exampleView);
+		exampleView.scaleBy(dscale).setReferencePoint(0.5, 0.5).translateBy(x + sizeBoundingBox / 2 - exampleView.getCenterX(), y + sizeBoundingBox / 2 - exampleView.getCenterY());
+
+		gestureBB.setFillPaint(new Color(250, 240, 230));
+
+		exampleView.fixReferenceShapeToCurrent().setPickable(false);
+		gestureBB.fixReferenceShapeToCurrent();
+		CEllipse startPoint = canvas.newEllipse(exampleView.getStartX() - sizeStartPoint / 2, exampleView.getStartY() - sizeStartPoint / 2, sizeStartPoint, sizeStartPoint);
+		startPoint.setFillPaint(Color.RED).setOutlinePaint(Color.RED).setPickable(false);
+
+		gestureBB.addChild(exampleView);
+		exampleView.addChild(startPoint);
+		exampleView.setAntialiased(true);
+		startPoint.setAntialiased(true);
+		
+		return gestureBB;
+	}
+
 }

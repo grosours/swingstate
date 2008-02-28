@@ -84,10 +84,10 @@ public class GestureRecognition extends BasicApplet {
 	Canvas canvas;
 	
 	void recognizedGestures(AbstractClassifier classifier) {
-		for(int i = 0; i < classifier.getClasses().size(); i++) {
-			CPolyLine gest = classifier.getRepresentative(classifier.getClasses().get(i));
+		for(int i = 0; i < classifier.getClassesNames().size(); i++) {
+			CPolyLine gest = classifier.getRepresentative(classifier.getClassesNames().get(i));
 			gest.addTo(canvas).scaleBy(25 / gest.getHeight(), 25 / gest.getWidth()).translateTo(75 + 50*i, 25);
-			canvas.newText(0, 0, classifier.getClasses().get(i)).translateTo(gest.getCenterX(), gest.getMaxY() + 12);			
+			canvas.newText(0, 0, classifier.getClassesNames().get(i)).translateTo(gest.getCenterX(), gest.getMaxY() + 12);			
 		}
 	}
 	

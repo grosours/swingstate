@@ -29,7 +29,7 @@ public class CText extends CShape {
 	/**
      * The FontRenderContext used to render this text.
      */
-    public static final FontRenderContext FRC = new FontRenderContext(null, false, false);
+    public static FontRenderContext FRC = new FontRenderContext(null, false, false);
 	
     private double yOffSet = 0;
 	private String text;
@@ -380,4 +380,14 @@ public class CText extends CShape {
 		return sms;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public CElement setAntialiased(boolean a) {
+		if(a != FRC.isAntiAliased())
+			FRC = new FontRenderContext(null, a, false);
+		setText(text);
+		return this;
+	}
+	
 }

@@ -287,10 +287,11 @@ public class Canvas extends JPanel implements MouseListener,
 //		if(isOpaque()) g.fillRect(0, 0, getWidth(), getHeight());
 //		else g.clearRect(0, 0, getWidth(), getHeight());
 
-		if (renderingHints == null)
+		if (renderingHints == null) {
 			renderingHints = g2d.getRenderingHints();
-		else
+		} else {
 			renderingHints.add(g2d.getRenderingHints());
+		}
 		transparency = (AlphaComposite) g2d.getComposite();
 		transform = g2d.getTransform();
 

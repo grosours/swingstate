@@ -6,6 +6,7 @@ import java.awt.geom.Point2D;
 import java.util.EventObject;
 
 import fr.lri.swingstates.events.Utils;
+import fr.lri.swingstates.events.VirtualCanvasEvent;
 import fr.lri.swingstates.sm.BasicInputStateMachine;
 
 /**
@@ -120,6 +121,17 @@ public abstract class MouseOnPosition extends EventOnPosition {
 	 */
 	public Point2D getPoint() {
 		return ((MouseEvent)triggeringEvent).getPoint();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean matches(EventObject eventObject) {
+		if(eventObject instanceof MouseEvent) {
+			triggeringEvent = eventObject;
+			return true;
+		}
+		return false;
 	}
 	
 	protected boolean matches(EventObject eventObject, int typeEvent) {

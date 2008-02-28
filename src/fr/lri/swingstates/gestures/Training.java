@@ -8,7 +8,6 @@ package fr.lri.swingstates.gestures;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -59,7 +58,12 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import fr.lri.swingstates.canvas.CEllipse;
+import fr.lri.swingstates.canvas.CExtensionalTag;
+import fr.lri.swingstates.canvas.CIntentionalTag;
 import fr.lri.swingstates.canvas.CPolyLine;
+import fr.lri.swingstates.canvas.CRectangle;
+import fr.lri.swingstates.canvas.CShape;
 import fr.lri.swingstates.canvas.CStateMachine;
 import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.gestures.dollar1.Dollar1Classifier;
@@ -67,6 +71,7 @@ import fr.lri.swingstates.gestures.rubine.RubineClassifier;
 import fr.lri.swingstates.sm.State;
 import fr.lri.swingstates.sm.Transition;
 import fr.lri.swingstates.sm.transitions.Drag;
+import fr.lri.swingstates.sm.transitions.KeyPress;
 import fr.lri.swingstates.sm.transitions.Press;
 import fr.lri.swingstates.sm.transitions.Release;
 
@@ -207,7 +212,7 @@ public class Training {
 		classRepresentative.removeAllShapes();
 		CPolyLine representative = rubineClassifier.getRepresentative(className);
 		if (representative != null) {
-			GestureExamples.showPreview(classRepresentative, representative, 0, 0, 50, 10, 5);
+			GestureUtils.showPreview(classRepresentative, representative, 0, 0, 50, 10, 5);
 		}
 		// gestureAverage.removeAllShapes();
 		// CPolyLine average =
@@ -276,10 +281,10 @@ public class Training {
 		classifiers.clear();
 		classifiers.add(rubineClassifier);
 		classifiers.add(dollar1Classifier);
-		for (Iterator<String> iterator = rubineClassifier.getClasses().iterator(); iterator.hasNext();) {
+		for (Iterator<String> iterator = rubineClassifier.getClassesNames().iterator(); iterator.hasNext();) {
 			addClass(iterator.next(), false, false);
 		}
-		if (rubineClassifier.getClasses().size() > 0)
+		if (rubineClassifier.getClassesNames().size() > 0)
 			classesListUI.setSelectedIndex(0);
 //		probability.setValue(rubineClassifier.getMinimumProbability());
 		mahalanobis.setValue(rubineClassifier.getMaximumDistance());
@@ -367,12 +372,11 @@ public class Training {
 			if (classifiers.size() < 1)
 				System.err.println("no classifier loaded in training application.");
 
-			GestureClass gclass = classifiers.get(INDEX_RUBINE).findClass(nameClass);
 			GestureExamples gex = new GestureExamples(frame, this);
-			Vector<Gesture> gestures = gclass.getGestures();
+			Vector<Gesture> gestures = classifiers.get(INDEX_RUBINE).getExamples(nameClass);
 			for (Iterator<Gesture> j = gestures.iterator(); j.hasNext();)
 				gex.addExample(j.next());
-			gestureExamples.put(gclass.getName(), gex);
+			gestureExamples.put(nameClass, gex);
 		}
 		if (nameClass.length() != 0 && !classesList.contains(nameClass)) {
 			classesList.addElement(nameClass);
@@ -819,5 +823,152 @@ public class Training {
 	public Vector<AbstractClassifier> getClassifiers() {
 		return classifiers;
 	}
+	
+	class GestureExamples extends JScrollPane {
+
+		private int sizePreview = 50;
+
+		private Canvas canvas;
+		private JFrame topLevelContainer;
+		private int lastX, lastY;
+		private Training training;
+
+		/**
+		 * Tag assigned to every graphical gesture examples.
+		 */
+		private class GestureBoundingBox extends CExtensionalTag {
+			Gesture containedGesture;
+
+			public GestureBoundingBox(Gesture gesture) {
+				super();
+				this.containedGesture = gesture;
+			}
+
+			public Gesture getContainedGesture() {
+				return containedGesture;
+			}
+		};
+
+		/**
+		 * Builds a widget for displaying a set of gestures.
+		 * @param topLevelContainer The main frame in which this widget is packed.
+		 * @param training The training application.
+		 */
+		public GestureExamples(JFrame topLevelContainer, Training training) {
+			super();
+			this.training = training;
+			this.topLevelContainer = topLevelContainer;
+			canvas = new Canvas(200, 100);
+			setViewportView(canvas);
+			lastX = 0;
+			lastY = 0;
+
+			new CStateMachine(canvas) {
+				CShape selected = null;
+				GestureBoundingBox tagSelected;
+				public State start = new State() {
+					Transition selectGesture = new PressOnTag(GestureBoundingBox.class, BUTTON1, ">> selection") {
+						public void action() {
+							tagSelected = (GestureBoundingBox) getTag();
+							canvas.requestFocus();
+							selected = getShape();
+							selected.setOutlinePaint(Color.RED);
+						}
+					};
+				};
+				public State selection = new State() {
+					Transition deleteGesture = new KeyPress(KeyEvent.VK_BACK_SPACE, ">> start") {
+						public void action() {
+							deleteGesture(tagSelected, selected);
+						}
+					};
+					Transition selectAnotherGesture = new PressOnTag(GestureBoundingBox.class, BUTTON1) {
+						public void action() {
+							tagSelected = (GestureBoundingBox) getTag();
+							selected.setOutlinePaint(Color.BLACK);
+							canvas.requestFocus();
+							selected = getShape();
+							selected.setOutlinePaint(Color.RED);
+						}
+					};
+					Transition deselect = new Press(BUTTON1, ">> start") {
+						public void action() {
+							selected.setOutlinePaint(Color.BLACK);
+						}
+					};
+				};
+			};
+
+		}
+
+		private void fillBlanks() {
+			CIntentionalTag tag = canvas.getTag(GestureBoundingBox.class);
+			tag.reset();
+			CShape next;
+			int x = 0;
+			int y = 0;
+			while (tag.hasNext()) {
+				next = tag.nextShape();
+				next.setReferencePoint(0.5, 0.5).translateTo(x + sizePreview / 2, y + sizePreview / 2);
+				x += sizePreview;
+				if ((x + sizePreview) > topLevelContainer.getWidth()) {
+					x = 0;
+					y += sizePreview;
+					if ((y + sizePreview) > canvas.getPreferredSize().getHeight()) {
+						canvas.setPreferredSize(new Dimension((int) canvas.getPreferredSize().getWidth(), y + sizePreview));
+						canvas.revalidate();
+					}
+				}
+			}
+			lastX = x;
+			lastY = y;
+		}
+
+		private void deleteGesture(GestureBoundingBox tagSelected, CShape bbGesture) {
+			canvas.removeShapes(bbGesture.getHierarchy());
+			fillBlanks();
+			for (Iterator<AbstractClassifier> iterator = training.getClassifiers().iterator(); iterator.hasNext();)
+				iterator.next().removeExample(tagSelected.getContainedGesture());
+
+			training.updateInfos(false);
+		}
+
+		/**
+		 * Adds a gesture to this GestureExamples widget.
+		 * 
+		 * @param example
+		 *            The gesture to add.
+		 */
+		public void addExample(Gesture example) {
+			CPolyLine graphicalExample = example.asPolyLine();
+			double maxSide = Math.max(graphicalExample.getHeight(), graphicalExample.getWidth());
+			double dscale = 40 / maxSide;
+			if ((lastX + sizePreview) > topLevelContainer.getWidth()) {
+				lastX = 0;
+				lastY += sizePreview;
+				if ((lastY + sizePreview) > canvas.getPreferredSize().getHeight()) {
+					canvas.setPreferredSize(new Dimension((int) canvas.getPreferredSize().getWidth(), lastY + sizePreview));
+					canvas.revalidate();
+				}
+			}
+			CRectangle gestureBB = canvas.newRectangle(lastX + 1, lastY + 1, sizePreview - 2, sizePreview - 2);
+			graphicalExample.setFilled(false);
+			canvas.addShape(graphicalExample);
+
+			gestureBB.addTag(new GestureBoundingBox(example));
+
+			double sizeStartPoint = 5 / dscale;
+			CEllipse startPoint = canvas.newEllipse(graphicalExample.getStartX() - sizeStartPoint / 2, graphicalExample.getStartY() - sizeStartPoint / 2, sizeStartPoint, sizeStartPoint);
+			startPoint.setFillPaint(Color.RED).setOutlinePaint(Color.RED).setPickable(false);
+			gestureBB.setFillPaint(new Color(250, 240, 230));
+			gestureBB.addChild(graphicalExample);
+			graphicalExample.addChild(startPoint);
+			graphicalExample.translateBy(lastX + sizePreview / 2 - graphicalExample.getCenterX(), lastY + sizePreview / 2 - graphicalExample.getCenterY()).scaleBy(dscale).setPickable(false);
+
+			lastX += sizePreview;
+		}
+
+	}
+
 
 }

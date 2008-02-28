@@ -15,12 +15,14 @@ package fr.lri.swingstates.gestures.dollar1;
 
 import java.awt.geom.Point2D;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -28,6 +30,7 @@ import fr.lri.swingstates.canvas.CPolyLine;
 import fr.lri.swingstates.gestures.AbstractClassifier;
 import fr.lri.swingstates.gestures.Gesture;
 import fr.lri.swingstates.gestures.GestureClass;
+import fr.lri.swingstates.gestures.GestureUtils;
 import fr.lri.swingstates.gestures.Score;
 
 /**
@@ -37,6 +40,78 @@ import fr.lri.swingstates.gestures.Score;
  * 
  */
 public class Dollar1Classifier extends AbstractClassifier {
+
+	class Dollar1GestureClass extends GestureClass {
+
+		private Vector<Vector<Point2D>> resampledGestures = new Vector<Vector<Point2D>>();
+
+		Dollar1GestureClass() {
+			super();
+		}
+
+		Dollar1GestureClass(String n) {
+			super(n);
+		}
+
+		/**
+		 * {@inheritDoc} Each time a gesture is added, a vector of points
+		 * corresponding to this gesture as resampled, rotated and scaled is
+		 * computed and stored in <code>resampledGestures</code>.
+		 */
+		public void addExample(Gesture gesture) {
+			super.addExample(gesture);
+			Vector<Point2D> newPoints = new Vector<Point2D>();
+			GestureUtils.resample(gesture.getPoints(), Dollar1Classifier.this.getNbPoints(), newPoints);
+			GestureUtils.rotateToZero(newPoints, newPoints);
+			GestureUtils.scaleToSquare(newPoints, Dollar1Classifier.this.getSizeScaleToSquare(), newPoints);
+			GestureUtils.translateToOrigin(newPoints, newPoints);
+			resampledGestures.add(newPoints);
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		public boolean removeExample(Gesture gesture) {
+			if (!gestures.contains(gesture))
+				return false;
+			int index = gestures.indexOf(gesture);
+			if (index != -1)
+				resampledGestures.remove(index);
+			return super.removeExample(gesture);
+		}
+
+		/**
+		 * @return The vector of gesture examples as resampled, rotated and scaled.
+		 * @see Dollar1GestureClass#addExample(Gesture)
+		 */
+		public Vector<Vector<Point2D>> getResampledGestures() {
+			return resampledGestures;
+		}
+
+		/**
+		 * @return The average vector of this class. A point#i in this vector is the
+		 *         gravity center of points#i of all examples.
+		 */
+		public Vector<Point2D> getAverage() {
+			int nbPoints = Dollar1Classifier.this.getNbPoints();
+			Vector<Point2D> average = new Vector<Point2D>(nbPoints);
+			double sumX, sumY;
+			for (int i = 0; i < nbPoints; i++) {
+				sumX = 0;
+				sumY = 0;
+				for (Iterator<Vector<Point2D>> iterator = resampledGestures.iterator(); iterator.hasNext();) {
+					Point2D pt = iterator.next().get(i);
+					sumX += pt.getX();
+					sumY += pt.getY();
+				}
+				average.add(new Point2D.Double(sumX / resampledGestures.size(), sumY / resampledGestures.size()));
+			}
+			return average;
+		}
+		
+	}
+	
+	protected ArrayList<Dollar1GestureClass>    classes = new ArrayList<Dollar1GestureClass>();
 
 	private double theta = Math.PI / 4;
 	private double deltaTheta = Math.PI / 90;
@@ -56,16 +131,16 @@ public class Dollar1Classifier extends AbstractClassifier {
 		GestureClass recognized = null;
 
 		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
-		Dollar1Utils.resample(g.getPoints(), nbPoints, inputPointsResampled);
-		Dollar1Utils.rotateToZero(inputPointsResampled, inputPointsResampled);
-		Dollar1Utils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
-		Dollar1Utils.translateToOrigin(inputPointsResampled, inputPointsResampled);
+		GestureUtils.resample(g.getPoints(), nbPoints, inputPointsResampled);
+		GestureUtils.rotateToZero(inputPointsResampled, inputPointsResampled);
+		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
+		GestureUtils.translateToOrigin(inputPointsResampled, inputPointsResampled);
 
-		for (Iterator<GestureClass> classesIterator = classes.iterator(); classesIterator.hasNext();) {
-			Dollar1GestureClass nextClass = (Dollar1GestureClass) classesIterator.next();
+		for (Iterator<Dollar1GestureClass> classesIterator = classes.iterator(); classesIterator.hasNext();) {
+			Dollar1GestureClass nextClass = classesIterator.next();
 			for (Iterator<Vector<Point2D>> gesturesIterator = nextClass.getResampledGestures().iterator(); gesturesIterator.hasNext();) {
 				Vector<Point2D> gesturePoints = gesturesIterator.next();
-				currentScore = Dollar1Utils.distanceAtBestAngle(inputPointsResampled, gesturePoints, -theta, theta, deltaTheta);
+				currentScore = GestureUtils.distanceAtBestAngle(inputPointsResampled, gesturePoints, -theta, theta, deltaTheta);
 				if (currentScore < minScore) {
 					minScore = currentScore;
 					recognized = nextClass;
@@ -85,7 +160,7 @@ public class Dollar1Classifier extends AbstractClassifier {
 		int i = 0;
 		Dollar1GestureClass gestureClass = null;
 		for (; i < classes.size(); i++) {
-			gestureClass = (Dollar1GestureClass) classes.get(i);
+			gestureClass = classes.get(i);
 			if (className.compareTo(gestureClass.getName()) == 0)
 				break;
 		}
@@ -96,27 +171,16 @@ public class Dollar1Classifier extends AbstractClassifier {
 		double minValue = Double.MAX_VALUE;
 		for (Iterator<Vector<Point2D>> gesturesIterator = gestureClass.getResampledGestures().iterator(); gesturesIterator.hasNext();) {
 			next = gesturesIterator.next();
-			double value = Dollar1Utils.distanceAtBestAngle(next, average, -theta, theta, deltaTheta);
+			double value = GestureUtils.distanceAtBestAngle(next, average, -theta, theta, deltaTheta);
 			if (value < minValue) {
 				minValue = value;
-				representative = Dollar1Utils.asPolyLine(next);
+				representative = GestureUtils.asPolyLine(next);
 			}
 		}
 
 		if (representative != null)
 			representative.setFilled(false);
 		return representative;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public void removeClass(String className) {
-		if (classes.size() == 0)
-			System.err.println("no class " + className + " in the classifier");
-		GestureClass gc = findClass(className);
-		int i = classes.indexOf(gc);
-		classes.remove(i);
 	}
 
 	/**
@@ -175,11 +239,22 @@ public class Dollar1Classifier extends AbstractClassifier {
 	/**
 	 * {@inheritDoc}
 	 */
-	public void addClass(String className) {
-		if (findClass(className) != null)
-			return;
-		Dollar1GestureClass gcr = new Dollar1GestureClass(className, this);
+	public int addClass(String className) {
+		int index = super.addClass(className);
+		if(index == -1) return -1;
+		Dollar1GestureClass gcr = new Dollar1GestureClass(className);
 		classes.add(gcr);
+		return index;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void removeClass(String className) {
+		int index = classesNames.indexOf(className);
+		if(index == -1) return;
+		super.removeClass(className);
+		classes.remove(index);
 	}
 
 	/**
@@ -198,12 +273,20 @@ public class Dollar1Classifier extends AbstractClassifier {
 		return sizeScaleToSquare;
 	}
 
+	protected void write(DataOutputStream out) throws IOException {
+		out.writeInt(classes.size());
+		for (int i = 0; i < classes.size(); i++)
+			classes.get(i).write(out);
+	}
+	
 	protected Object read(DataInputStream in) throws IOException {
 		int nClasses = in.readInt();
 		for (int i = 0; i < nClasses; i++) {
-			Dollar1GestureClass c = new Dollar1GestureClass(this);
+			Dollar1GestureClass c = new Dollar1GestureClass();
 			c.read(in);
 			classes.add(c);
+			classesNames.add(c.getName());
+			templates.add(null);
 		}
 		return this;
 	}
@@ -241,18 +324,18 @@ public class Dollar1Classifier extends AbstractClassifier {
 		Vector<Score> sortedClasses = new Vector<Score>();
 
 		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
-		Dollar1Utils.resample(g.getPoints(), nbPoints, inputPointsResampled);
-		Dollar1Utils.rotateToZero(inputPointsResampled, inputPointsResampled);
-		Dollar1Utils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
-		Dollar1Utils.translateToOrigin(inputPointsResampled, inputPointsResampled);
+		GestureUtils.resample(g.getPoints(), nbPoints, inputPointsResampled);
+		GestureUtils.rotateToZero(inputPointsResampled, inputPointsResampled);
+		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
+		GestureUtils.translateToOrigin(inputPointsResampled, inputPointsResampled);
 
 		double score;
 		double minClassScore = 0;
 		for (int nc = 0; nc < classes.size(); nc++) {
 			minClassScore = Integer.MAX_VALUE;
-			for (Iterator<Vector<Point2D>> gesturesIterator = ((Dollar1GestureClass) classes.get(nc)).getResampledGestures().iterator(); gesturesIterator.hasNext();) {
+			for (Iterator<Vector<Point2D>> gesturesIterator = classes.get(nc).getResampledGestures().iterator(); gesturesIterator.hasNext();) {
 				Vector<Point2D> gesturePoints = gesturesIterator.next();
-				score = Dollar1Utils.distanceAtBestAngle(inputPointsResampled, gesturePoints, -theta, theta, deltaTheta);
+				score = GestureUtils.distanceAtBestAngle(inputPointsResampled, gesturePoints, -theta, theta, deltaTheta);
 				if (score < minClassScore)
 					minClassScore = score;
 			}
@@ -269,4 +352,53 @@ public class Dollar1Classifier extends AbstractClassifier {
 		return sortedClasses;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public void removeExample(Gesture gesture) {
+		for (Iterator<Dollar1GestureClass> iterator = classes.iterator(); iterator.hasNext();) {
+			Dollar1GestureClass next = iterator.next();
+			if(next != null) next.removeExample(gesture);
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void addExample(String className, Gesture example) {
+		int index = classesNames.indexOf(className);
+		if(index == -1) return;
+		Dollar1GestureClass gestureClass = classes.get(index);
+		if(gestureClass != null) gestureClass.addExample(example);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void renameClass(String previousClassName, String newClassName) {
+		int index = classesNames.indexOf(previousClassName);
+		if(index == -1) return;
+		Dollar1GestureClass gc = classes.get(index);
+		gc.setName(newClassName);
+		super.renameClass(previousClassName, newClassName);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void reset() {
+		super.reset();
+		classes.clear();
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public Vector<Gesture> getExamples(String className)
+			throws UnsupportedOperationException {
+		int index = classesNames.indexOf(className);
+		if(index == -1) return null;
+		Dollar1GestureClass gc = classes.get(index);
+		return gc.getGestures();
+	}
 }

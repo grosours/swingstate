@@ -287,7 +287,10 @@ public abstract class Animation {
     		else t = 1 - (double)timeDoneInLap/lapDuration;
     	} else {
     		long timeLeft = endTime - currentTime;
-        	if(timeLeft<0) stop();
+        	if(timeLeft<0) {
+        		stop();
+        		return -1;
+        	}
         	long lapsToDo = timeLeft/lapDuration;
         	long timeToDoInLap = timeLeft%lapDuration;
         	long currentLap = nbLaps-lapsToDo-1;
@@ -306,7 +309,7 @@ public abstract class Animation {
 	
 	void update() {
 		if(nextStepTime <= AnimationManager.getInstance().getCurrentTime()) {
-			updateTValue();
+			double on = updateTValue();
 			if(t <= 0) {
 				t = 0;
 			} else {
@@ -314,7 +317,7 @@ public abstract class Animation {
 					t = 1;
 				}
 			}
-			step(t);
+			if(on != -1) step(t);
 			if(getAnimated() != null) {
 				if(getAnimated().getCanvas().isTracking(getAnimated())) {
 					getAnimated().getCanvas().processEvent(new VirtualCElementEvent(getAnimated()));

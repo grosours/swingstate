@@ -5,13 +5,13 @@
 */
 package fr.lri.swingstates.gestures;
 
+import java.awt.geom.Point2D;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Vector;
 
 import fr.lri.swingstates.canvas.CPolyLine;
@@ -23,15 +23,12 @@ import fr.lri.swingstates.canvas.CPolyLine;
  */
 public abstract class AbstractClassifier {
 
-	protected ArrayList<GestureClass> classes = new ArrayList<GestureClass>();
+	protected ArrayList<String>          classesNames = new ArrayList<String>();
+	protected ArrayList<Vector<Point2D>> templates = new ArrayList<Vector<Point2D>>();
 
 	protected abstract Object read(DataInputStream in) throws IOException;
 
-	protected void write(DataOutputStream out) throws IOException {
-		out.writeInt(classes.size());
-		for (int i = 0; i < classes.size(); i++)
-			classes.get(i).write(out);
-	}
+	protected abstract void write(DataOutputStream out) throws IOException;
 
 	/**
 	 * Removes a gesture example from this classifier.
@@ -39,28 +36,7 @@ public abstract class AbstractClassifier {
 	 * @param gesture
 	 *            the gesture to remove
 	 */
-	public void removeGesture(Gesture gesture) {
-		for (Iterator<GestureClass> iterator = classes.iterator(); iterator.hasNext();) {
-			iterator.next().removeExample(gesture);
-		}
-	}
-
-	/**
-	 * Looks for the class of gestures labeled by a given name.
-	 * 
-	 * @param className
-	 *            The name of the class to look for.
-	 * @return the class of gestures labeled by name if it exists, null if it
-	 *         does not exist.
-	 */
-	public GestureClass findClass(String className) {
-		ArrayList<GestureClass> c = classes;
-		for (int i = 0; i < classes.size(); i++) {
-			if (className.compareTo(classes.get(i).getName()) == 0)
-				return c.get(i);
-		}
-		return null;
-	}
+	public abstract void removeExample(Gesture gesture) throws UnsupportedOperationException;
 
 	/**
 	 * Returns a graphical representation for a given class of gestures. The
@@ -79,8 +55,15 @@ public abstract class AbstractClassifier {
 	 * 
 	 * @param className
 	 *            The name of the class of gestures to add.
+	 * @return the index of this class in the list of classes (-1 if this class already exists and thus has not been added).
 	 */
-	public abstract void addClass(String className);
+	public int addClass(String className) {
+		int index = classesNames.indexOf(className);
+		if(index != -1) return -1;
+		classesNames.add(className);
+		templates.add(null);
+		return classesNames.size() - 1;
+	}
 
 	/**
 	 * Adds a gesture example to this classifier.
@@ -90,10 +73,15 @@ public abstract class AbstractClassifier {
 	 * @param example
 	 *            the gesture example
 	 */
-	public void addExample(String className, Gesture example) {
-		GestureClass gestureClass = findClass(className);
-		gestureClass.addExample(example);
-	}
+	public abstract void addExample(String className, Gesture example) throws UnsupportedOperationException;
+	
+	/**
+	 * Returns the vector of gesture examples for a given class.
+	 * @param className The name of the class
+	 * @return The set of examples for the class <code>className</code>.
+	 * @throws UnsupportedOperationException
+	 */
+	public abstract Vector<Gesture> getExamples(String className) throws UnsupportedOperationException;
 
 	/**
 	 * Removes a class of gestures from this classifier.
@@ -101,7 +89,13 @@ public abstract class AbstractClassifier {
 	 * @param className
 	 *            The name of the class of gestures to remove.
 	 */
-	public abstract void removeClass(String className);
+	public void removeClass(String className) {
+		int index = classesNames.indexOf(className);
+		if (index == -1)
+			System.err.println("no class " + className + " in the classifier");
+		classesNames.remove(index);
+		templates.remove(index);
+	}
 
 	/**
 	 * Renames a class of gestures.
@@ -112,7 +106,8 @@ public abstract class AbstractClassifier {
 	 *            The new name of this class of gestures
 	 */
 	public void renameClass(String previousClassName, String newClassName) {
-		findClass(previousClassName).setName(newClassName);
+		int index = classesNames.indexOf(previousClassName);
+		classesNames.set(index, newClassName);
 	}
 
 	/**
@@ -156,20 +151,40 @@ public abstract class AbstractClassifier {
 	}
 
 	/**
-	 * @return the list of gesture classes contained in this classifier.
-	 */
-	public ArrayList<String> getClasses() {
-		ArrayList<String> classesNames = new ArrayList<String>();
-		for(Iterator<GestureClass> iterator = classes.iterator(); iterator.hasNext(); )
-			classesNames.add(iterator.next().getName());
-		return classesNames;
-	}
-	
-	/**
 	 * Resets this classifier (i.e. removes all the classes of gestures).
 	 */
 	public void reset() {
-		classes.clear();
+		classesNames.clear();
+		templates.clear();
+	}
+	
+	/**
+	 * Sets the template gesture for a given existing class of gestures in this classifier.
+	 * @param className the name of the class of gestures.
+	 * @param template the template for the class className.
+	 */
+	public void setTemplate(String className, Vector<Point2D> template) {
+		int index = classesNames.indexOf(className);
+		if(index == -1) return;
+		templates.remove(index);
+		templates.add(index, template);
 	}
 
+	/**
+	 * @param className the name of the class of gestures.
+	 * @return the template for the class className if it exists, null otherwise.
+	 */
+	public Vector<Point2D> getTemplate(String className) {
+		int index = classesNames.indexOf(className);
+		if (index == -1)
+			System.err.println("no class " + className + " in the classifier");
+		return templates.get(index);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public ArrayList<String> getClassesNames() {
+		return classesNames;
+	}
 }

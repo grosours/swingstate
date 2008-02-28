@@ -10,6 +10,12 @@ import fr.lri.swingstates.canvas.CEllipse;
 import fr.lri.swingstates.canvas.CPolyLine;
 import fr.lri.swingstates.canvas.CRectangle;
 
+/**
+ * A <code>javax.swing.Icon<code> of a gesture.
+ * 
+ * @author Caroline Appert
+ *
+ */
 public class GestureIcon implements Icon {
 
 	private int width;
@@ -47,7 +53,7 @@ public class GestureIcon implements Icon {
 		bg.setFilled(false);
 		bg.paint(g);
 		polyline.setReferencePoint(0, 0).translateTo(x + sideStartingPoint/2 + 1, y + sideStartingPoint/2 + 1);
-		polyline.setOutlinePaint(color);
+		polyline.setOutlinePaint(color).setAntialiased(true);
 		polyline.paint(g);
 		startPoint.paint(g);
 		g.setColor(saveColor);

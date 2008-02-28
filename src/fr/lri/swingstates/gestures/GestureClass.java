@@ -48,7 +48,7 @@ public class GestureClass {
 		name = n;
 	}
 
-	void write(DataOutputStream out) throws IOException {
+	public void write(DataOutputStream out) throws IOException {
 		out.writeUTF(name);
 		out.writeInt(gestures.size());
 		for (Iterator<Gesture> iterator = gestures.iterator(); iterator.hasNext();) {

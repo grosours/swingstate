@@ -193,9 +193,9 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 */
 	public StateMachine reset(){
 		if (this.watcher != null) this.watcher.fireSmReset(this.getCurrentState());
-		this.doReset();
 		this.currentState = this.initialState;
 		this.disarmTimer();
+		this.doReset();
 		return this;
 	}
 
