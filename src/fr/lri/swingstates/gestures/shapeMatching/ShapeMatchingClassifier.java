@@ -44,7 +44,8 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	private double theta = Math.PI / 8;
 	private double deltaTheta = Math.PI / 90;
 
-	private int nbPoints = 64;
+//	private int nbPoints = 64;
+	private int nbPoints = 150;
 
 	private double currentDistance = -1;
 	private double maximumDistance = 30;

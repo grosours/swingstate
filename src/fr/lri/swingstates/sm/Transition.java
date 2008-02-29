@@ -17,9 +17,8 @@ import java.util.LinkedList;
  * 	}
  * </pre>
  * 
- * <p>The <code>Transition</code> class has many derived classes corresponding to the various types of events that can be handeled by a state machine.
+ * <p>The <code>Transition</code> class has many derived classes corresponding to the various types of events that can be handled by a state machine.
  * <code>&lt;eventtype&gt;</code> represents one of these classes and &lt;parameters&gt; the corresponding parameters.
- * The complete list of events is given below, refer to the corresponding classes for further details.
  * 
  * <p><code>&lt;output state&gt</code> is the specification of the output state of the transition.
  * It is a string containing the name of the output state, which is, in general, the name of the
@@ -58,9 +57,7 @@ public abstract class Transition {
 	}
 
 	/**
-	 * Builds a transition with any modifier.
-	 * @param keyEvent The string describing the events 
-	 * that triggers this transition.
+	 * Builds a transition that is triggered by any event.
 	 * @param outState The name of the output state
 	 */
 	protected Transition(String outState) {
@@ -68,10 +65,8 @@ public abstract class Transition {
 	}
 	
 	/**
-	 * Builds a transition with any modifier 
+	 * Builds a transition that is triggered by any event and 
 	 * that loops on the current state.
-	 * @param keyEvent The string describing the events 
-	 * that triggers this transition.
 	 */
 	protected Transition() {
 		outputStateName = null;
