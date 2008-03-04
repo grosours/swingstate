@@ -106,18 +106,16 @@ public class Event extends Transition {
 		classEvent = eventClass;
 	}
 	
+	
 	/**
 	 * {@inheritDoc}
 	 */
 	public boolean matches(EventObject eventObject) {
-		super.matches(eventObject);
 		if(classEvent != null) {
-			triggeringEvent = eventObject;
 			return classEvent.isAssignableFrom(eventObject.getClass());
 		} else {
 			if (eventObject instanceof VirtualEvent) {
-				return event.compareTo(
-						((VirtualEvent) eventObject).getNameEvent()) == 0;
+				return event.compareTo(((VirtualEvent) eventObject).getNameEvent()) == 0;
 			}
 		}
 		return false;

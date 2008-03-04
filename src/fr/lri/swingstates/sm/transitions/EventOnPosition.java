@@ -78,7 +78,6 @@ public class EventOnPosition extends Event {
 	public boolean matches(EventObject eventObject) {
 		if(super.matches(eventObject)) {
 			if(eventObject instanceof VirtualCanvasEvent) {
-				triggeringEvent = eventObject;
 				return true;
 			}
 		}

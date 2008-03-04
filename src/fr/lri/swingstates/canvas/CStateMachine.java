@@ -2,7 +2,7 @@
  *   Authors: Caroline Appert (caroline.appert@lri.fr)
  *   Copyright (c) Universite Paris-Sud XI, 2007. All Rights Reserved
  *   Licensed under the GNU LGPL. For full terms see the file COPYING.
-*/
+ */
 package fr.lri.swingstates.canvas;
 
 import java.awt.event.InputEvent;
@@ -85,7 +85,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	 * The key string of events that triggered <code>AnimationResumed</code> transitions.
 	 */
 	public static String ANIMATION_RESUMED   = "AnimationResumed";
-	
+
 	/**
 	 * Builds a CStateMachine.
 	 */
@@ -264,13 +264,15 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	 *            The canvas.
 	 */
 	public void lowerPriorityThan(CStateMachine smGreater, Canvas canvas) {
-		if (canvas.stateMachines.remove(this)) {
-			int i = canvas.stateMachines.indexOf(smGreater);
-			if (i != -1) {
-				if ((i + 1) < canvas.stateMachines.size()) {
-					canvas.stateMachines.add(i + 1, this);
-				} else {
-					canvas.stateMachines.add(this);
+		synchronized(canvas.stateMachines) {
+			if (canvas.stateMachines.remove(this)) {
+				int i = canvas.stateMachines.indexOf(smGreater);
+				if (i != -1) {
+					if ((i + 1) < canvas.stateMachines.size()) {
+						canvas.stateMachines.add(i + 1, this);
+					} else {
+						canvas.stateMachines.add(this);
+					}
 				}
 			}
 		}
@@ -285,8 +287,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	 * @return this state machine.
 	 */
 	public CStateMachine lowestPriority(Canvas canvas) {
-		if (canvas.stateMachines.remove(this))
-			canvas.stateMachines.add(this);
+		synchronized(canvas.stateMachines) {
+			if (canvas.stateMachines.remove(this))
+				canvas.stateMachines.add(this);
+		}
 		return this;
 	}
 
@@ -305,10 +309,12 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	 * @return this state machine.
 	 */
 	public CStateMachine greaterPriorityThan(CStateMachine smLower, Canvas canvas) {
-		if (canvas.stateMachines.remove(this)) {
-			int i = canvas.stateMachines.indexOf(smLower);
-			if (i != -1) {
-				canvas.stateMachines.add(i, this);
+		synchronized(canvas.stateMachines) {
+			if (canvas.stateMachines.remove(this)) {
+				int i = canvas.stateMachines.indexOf(smLower);
+				if (i != -1) {
+					canvas.stateMachines.add(i, this);
+				}
 			}
 		}
 		return this;
@@ -323,8 +329,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	 * @return this state machine.
 	 */
 	public CStateMachine greatestPriority(Canvas canvas) {
-		if (canvas.stateMachines.remove(this))
-			canvas.stateMachines.addFirst(this);
+		synchronized(canvas.stateMachines) {
+			if (canvas.stateMachines.remove(this))
+				canvas.stateMachines.addFirst(this);
+		}
 		return this;
 	}
 
@@ -429,7 +437,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		public Point2D getPoint() {
 			return ((VirtualCanvasEvent)triggeringEvent).getPoint();
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -466,7 +474,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		protected Animation animation = null;
 		protected ATag tagAnimation = null;
 		protected boolean genericAnimation = true;
-		
+
 		/**
 		 * Builds a transition triggered by any animation that loops on the
 		 * current state.
@@ -1058,7 +1066,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 				return false;
 			}
 			VirtualCElementEvent vce = (VirtualCElementEvent) eventObject;
-			triggeringEvent = vce;
 			CElement elementThatTriggered = vce.getCElement();
 			if (element instanceof CShape) {
 				return element == elementThatTriggered;
@@ -1240,14 +1247,14 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		public Point2D getPoint() {
 			return ((PickerCEvent)triggeringEvent).getPoint();
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public CShape getShape() {
 			return ((PickerCEvent)triggeringEvent).getPicked();
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -1262,11 +1269,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if(!(me.getID() == typeEvent))
 				return false;
 			if (me.getSource() instanceof Canvas) {
-				triggeringEvent = me;
-//				if(!me.hasAlreadyPicked()) {
-//					Canvas source = (Canvas)me.getSource();
-//					me.setPicked(source.pick(me.getPoint()));
-//				}
 				CShape picked = me.getPicked();
 				return isSourceControlled(picked);
 			}
@@ -1284,7 +1286,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 					return false;
 				CShape picked = me.getPicked();
 				if(isSourceControlled(picked)) {
-					triggeringEvent = me;
 					return true;
 				}
 			}
@@ -2603,7 +2604,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			String evt = classEvent != null ? classEvent.getSimpleName() + ".class" : event;
 			if (isDesignedByClass) {
 				return getClass().getSuperclass().getSimpleName() + "(" + tagClass.getSimpleName() + ".class, " + Utils.getButtonAsText(button) + "," + Utils.getModifiersAsText(modifier) + "," + evt
-						+ ")";
+				+ ")";
 			} else {
 				if (isNamed)
 					return getClass().getSuperclass().getSimpleName() + "(\"" + tagName + "\", " + Utils.getButtonAsText(button) + "," + Utils.getModifiersAsText(modifier) + "," + evt + ")";
@@ -2628,14 +2629,14 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		public InputEvent getInputEvent() {
 			return (InputEvent) triggeringEvent;
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
 		public Point2D getPoint() {
 			return ((PickerCEvent)triggeringEvent).getPoint();
 		}
-		
+
 		/**
 		 * {@inheritDoc}
 		 */
@@ -2651,7 +2652,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			if (me.getSource() instanceof Canvas) {
 				CShape picked = me.getPicked();
 				if(isSourceControlled(picked) && matches(me.getPicked())) {
-					triggeringEvent = me;					
 					return true;
 				}
 			}
@@ -2663,7 +2663,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 				return false;
 			PickerCEvent me = (PickerCEvent) eventObject;
 			if (me.getSource() instanceof Canvas) {
-				triggeringEvent = me;
 				if(!((me.getID() == typeEvent) 
 						&& (modifier == ANYMODIFIER || modifier == Utils.modifiers(me)) 
 						&& (button == ANYBUTTON || button == Utils.button((PickerCEvent) eventObject)))) 

@@ -156,7 +156,6 @@ public abstract class Transition {
 	 * can trigger this transition. 
 	 */
 	public boolean matches(EventObject eventObject) {
-		triggeringEvent = eventObject;
 		return true;
 	}
 	
@@ -203,6 +202,13 @@ public abstract class Transition {
 	 */
 	public EventObject getEvent() {
 		return triggeringEvent;
+	}
+
+	/**
+	 * @param triggeringEvent The event that has just triggered this transition.
+	 */
+	void setTriggeringEvent(EventObject triggeringEvent) {
+		this.triggeringEvent = triggeringEvent;
 	}
 	
 	

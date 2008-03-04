@@ -515,11 +515,9 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		public boolean matches(EventObject eventObject) {
 			if(eventObject instanceof MouseEvent) {
 				MouseEvent me = (MouseEvent)eventObject;
-				triggeringEvent = eventObject;
+				return (!(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())));
 			}
-			if(getComponent() == null || !getControlledObjects().contains(getComponent())) return false;
-			boolean b =  super.matches(eventObject);
-			return b;
+			return false;
 		}
 
 
@@ -905,7 +903,6 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
-			triggeringEvent = me;
 			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER);
@@ -914,7 +911,6 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		protected boolean matches(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
-			triggeringEvent = me;
 			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
@@ -1251,7 +1247,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			this.tagName = tagName;
 		}
 
-		protected boolean matches() {
+		protected boolean matchesTag(MouseEvent eventObject) {
 			JTag tg = getTag();
 			boolean hasTested = false;
 			boolean hasTag = false;
@@ -1261,7 +1257,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 					if(tagClass.equals(o.getClass())) {
 						o.reset();
 						while(o.hasNext()) {
-							if(o.nextComponent() == getComponent()) {
+							if(o.nextComponent() == eventObject.getComponent()) {
 								hasTag = true;
 								break;
 							}
@@ -1286,8 +1282,8 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 					Class cls;
 					try {
 						cls = Class.forName(tagName);
-						if(cls != null && cls.isAssignableFrom(getComponent().getClass())) {
-							((JNamedTag)tg).addTo(getComponent());
+						if(cls != null && cls.isAssignableFrom(eventObject.getComponent().getClass())) {
+							((JNamedTag)tg).addTo(eventObject.getComponent());
 							hasTested = true;
 							hasTag = true;
 						}
@@ -1302,7 +1298,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 			if(!hasTested && tg!=null) {
 				tg.reset();
 				while(tg.hasNext()) {
-					if(tg.nextComponent() == getComponent()) {
+					if(tg.nextComponent() == eventObject.getComponent()) {
 						hasTag = true;
 						break;
 					}
@@ -1331,7 +1327,7 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		 * {@inheritDoc}
 		 */
 		public boolean matches(EventObject eventObject) {
-			return super.matches(eventObject) && matches();
+			return super.matches(eventObject) && matchesTag((MouseEvent)eventObject);
 		}
 
 	}	
@@ -1531,22 +1527,20 @@ public class JStateMachine extends BasicInputStateMachine implements MouseListen
 		protected boolean matchesIgnoreButtons(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
-			triggeringEvent = me;
 			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
-			&& matches();
+			&& matchesTag(me);
 		}
 
 		protected boolean matches(EventObject eventObject, int typeEvent) {
 			if(!(eventObject instanceof MouseEvent)) return false;
 			MouseEvent me = (MouseEvent)eventObject;
-			triggeringEvent = me;
 			if(me.getComponent() == null || !getControlledObjects().contains(me.getComponent())) return false;
 			return (me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == ANYMODIFIER)
 			&& (button == ANYBUTTON || button == Utils.button(me))
-			&& matches();
+			&& matchesTag(me);
 		}
 	}
 

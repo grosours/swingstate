@@ -378,7 +378,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 		this.timer.setDelay(d);
 		this.timer.setInitialDelay(d);
 		this.timer.setRepeats(repeat);
-		this.timer.start();
+		this.timer.restart();
 	}
 
 	/**
@@ -488,6 +488,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 				if(hasFired != null) break;
 				Transition t = (Transition)(i.next());
 				if(t.matches(event)) {
+					t.setTriggeringEvent(event);
 					if (fireTransition(t)) {
 						hasFired = t;
 						return hasFired;

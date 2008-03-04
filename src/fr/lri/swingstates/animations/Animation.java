@@ -88,10 +88,13 @@ public abstract class Animation {
 	
 	private long   startTime = 0;
 	private long   endTime = 0;
+	private long   pauseDuration = 0;
+	private long   lastSuspensionTime = 0;
 	private long   elapsed = 0;
 	private long   nextStepTime;
 	
-	private boolean suspended;
+	private boolean suspended = false;
+	private boolean started = false;
 	
 	private Canvas canvas;
 	/**
@@ -185,6 +188,8 @@ public abstract class Animation {
 //		if(animated == null) return this;
 		t = 0;
 		elapsed = 0;
+		pauseDuration = 0;
+		lastSuspensionTime = -1;
 		startTime = AnimationManager.getInstance().getCurrentTime();
 		if(nbLaps==0 || lapDuration==0) return this;
 		if(nbLaps<0) endTime=-1;
@@ -192,6 +197,7 @@ public abstract class Animation {
 		nextStepTime = startTime;
 		AnimationManager.getInstance().addAnim(this);
 		suspended = false;
+		started = true;
 		doStart();
 		processAnimationEvent("AnimationStarted");
 		return this;
@@ -210,6 +216,7 @@ public abstract class Animation {
 	 */
 	public final synchronized Animation stop() {
 		AnimationManager.getInstance().removeAnim(this);
+		started = false;
 		doStop();
 		processAnimationEvent("AnimationStopped");
 		return this;
@@ -229,6 +236,7 @@ public abstract class Animation {
 	 */
 	public final synchronized Animation suspend() {
 		suspended = true;
+		lastSuspensionTime = AnimationManager.getInstance().getCurrentTime();
 		processAnimationEvent("AnimationSuspended");
 		doSuspend();
 		return this;
@@ -248,6 +256,8 @@ public abstract class Animation {
 	 */
 	public final synchronized Animation resume() {
 		startTime = AnimationManager.getInstance().getCurrentTime();
+		if(lastSuspensionTime != -1) pauseDuration += (startTime - lastSuspensionTime);
+		lastSuspensionTime = -1;
 		nextStepTime = startTime;
 		endTime = startTime + (nbLaps*lapDuration-elapsed);
 		suspended = false;
@@ -280,7 +290,7 @@ public abstract class Animation {
     	long currentTime = AnimationManager.getInstance().getCurrentTime();
     	nextStepTime = currentTime+delay;
     	if(nbLaps<0) {
-    		elapsed = currentTime - startTime;
+    		elapsed = currentTime - startTime - pauseDuration;
     		long timeDoneInLap = elapsed%lapDuration;
     		long currentLap = (long) (elapsed/lapDuration);
     		if(currentLap%2 == 0) t = (double)timeDoneInLap/lapDuration;
@@ -308,6 +318,7 @@ public abstract class Animation {
 	}
 	
 	void update() {
+		if(suspended) return;
 		if(nextStepTime <= AnimationManager.getInstance().getCurrentTime()) {
 			double on = updateTValue();
 			if(t <= 0) {
@@ -435,6 +446,13 @@ public abstract class Animation {
 	 */
 	public void setCanvas(Canvas canvas) {
 		this.canvas = canvas;
+	}
+
+	/**
+	 * @return True if this animation is started.
+	 */
+	public boolean isStarted() {
+		return started;
 	}
 
 }

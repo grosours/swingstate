@@ -141,7 +141,6 @@ public abstract class KeyTransition extends Transition {
 		if(!(eventObject instanceof KeyEvent))
 			return false;
 		KeyEvent ke = (KeyEvent)eventObject;
-		triggeringEvent = ke;
 		if(generic) {
 			keyCode = ke.getKeyCode();
 			charCode = ke.getKeyChar();

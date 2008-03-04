@@ -8,6 +8,7 @@ package fr.lri.swingstates.canvas;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Paint;
@@ -276,7 +277,8 @@ public class CShape implements Cloneable, CElement {
 	public void paint(Graphics g) {
 		Graphics2D g2d = (Graphics2D) g;
 		Shape saveClip = g2d.getClip();
-
+		AffineTransform saveTransform = g2d.getTransform();
+		RenderingHints saveRenderingHints = g2d.getRenderingHints();
 		if (renderingHints != null) {
 			g2d.addRenderingHints(renderingHints);
 		}
@@ -294,23 +296,27 @@ public class CShape implements Cloneable, CElement {
 		g2d.setStroke(stroke);
 		g2d.transform(getAbsTransform());
 		if (filled) {
+			Composite comp = g2d.getComposite();
 			if (transparencyFill != null)
 				g2d.setComposite(transparencyFill);
 			g2d.setPaint(fillPaint);
 			g2d.fill(getShape());
-			g2d.setComposite(canvas.transparency);
+			if (transparencyFill != null) g2d.setComposite(comp);
 		}
 		if (outlined) {
+			Composite comp = g2d.getComposite();
 			if (transparencyOutline != null)
 				g2d.setComposite(transparencyOutline);
 			g2d.setPaint(outlinePaint);
 			g2d.draw(shape);
-			g2d.setComposite(canvas.transparency);
+			if (transparencyOutline != null)
+				g2d.setComposite(comp);
 		}
-		g2d.setTransform(canvas.transform);
+		g2d.setTransform(saveTransform);
 		if ((clip != null && clip != canvas.clip) || clip == DEFAULT_CLIP)
 			g2d.setClip(saveClip);
-		g2d.setRenderingHints(canvas.renderingHints);
+		if (renderingHints != null)
+			g2d.setRenderingHints(saveRenderingHints);
 	}
 
 	/**

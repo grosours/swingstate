@@ -32,6 +32,8 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -301,7 +303,7 @@ public class Canvas extends JPanel implements MouseListener,
 		else
 			g2d.setClip(g2d.getClip());
 
-		for (Iterator i = displayOrder.iterator(); i.hasNext();) {
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
 			CShape sms = (CShape) (i.next());
 			if (sms.isDrawable() && sms.isVisible())
 				sms.paint(g);
@@ -325,7 +327,7 @@ public class Canvas extends JPanel implements MouseListener,
 	 * @param event
 	 *            The name of the virtual event to process.
 	 * @param pt
-	 *            The point on which this event occured.
+	 *            The point on which this event occurred.
 	 */
 	public void processEvent(String event, Point2D pt) {
 		boolean isConsumed = false;
@@ -333,16 +335,32 @@ public class Canvas extends JPanel implements MouseListener,
 		VirtualEvent toProcess = picked != null ? new VirtualCanvasEvent(event,
 				picked, pt) : new VirtualCanvasEvent(event, null, pt);
 
-		for (Iterator i = stateMachines.iterator(); i.hasNext();) {
-			if (isConsumed)
-				break;
-			CStateMachine machine = (CStateMachine) i.next();
-			machine.consumes(false);
-			if (machine.getCurrentState() == null)
-				continue;
-			machine.processEvent(toProcess);
-			isConsumed = machine.hasConsumed();
+		CStateMachine machine;
+		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
+		synchronized(list) {
+			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+			while (i.hasNext()) {
+				if (isConsumed)
+					break;
+				machine = i.next();
+				machine.consumes(false);
+				if (machine.getCurrentState() == null)
+					continue;
+				machine.processEvent(toProcess);
+				isConsumed = machine.hasConsumed();
+			}
 		}
+		
+//		for (Iterator<CStateMachine> i = stateMachines.iterator(); i.hasNext();) {
+//			if (isConsumed)
+//				break;
+//			CStateMachine machine = i.next();
+//			machine.consumes(false);
+//			if (machine.getCurrentState() == null)
+//				continue;
+//			machine.processEvent(toProcess);
+//			isConsumed = machine.hasConsumed();
+//		}
 	}
 
 	/**
@@ -365,16 +383,31 @@ public class Canvas extends JPanel implements MouseListener,
 				((VirtualCanvasEvent)virtualEvent).setShape(pick(((VirtualCanvasEvent)virtualEvent).getPoint()));
 			}
 		}
-		for (Iterator<CStateMachine> i = stateMachines.iterator(); i.hasNext();) {
-			if (isConsumed)
-				break;
-			CStateMachine machine = i.next();
-			machine.consumes(false);
-			if (machine.getCurrentState() == null)
-				continue;
-			machine.processEvent(virtualEvent);
-			isConsumed = machine.hasConsumed();
+		CStateMachine machine;
+		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
+		synchronized(list) {
+			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+			while (i.hasNext()) {
+				if (isConsumed)
+					break;
+				machine = i.next();
+				machine.consumes(false);
+				if (machine.getCurrentState() == null)
+					continue;
+				machine.processEvent(virtualEvent);
+				isConsumed = machine.hasConsumed();
+			}
 		}
+//		for (Iterator<CStateMachine> i = stateMachines.iterator(); i.hasNext();) {
+//			if (isConsumed)
+//				break;
+//			CStateMachine machine = i.next();
+//			machine.consumes(false);
+//			if (machine.getCurrentState() == null)
+//				continue;
+//			machine.processEvent(virtualEvent);
+//			isConsumed = machine.hasConsumed();
+//		}
 	}
 
 	/**
@@ -422,29 +455,57 @@ public class Canvas extends JPanel implements MouseListener,
 	 *         otherwise.
 	 */
 	public boolean isTracking(CElement element) {
-		for (ListIterator<CStateMachine> i = stateMachines.listIterator(); i
-				.hasNext();) {
-			CStateMachine machine = i.next();
-			machine.consumes(false);
-			if (machine.isActive()) {
-				// because animation can fire events before the machine is initialized
-				if (machine.getCurrentState() == null) {
-					machine.initStatesAndTransitions();
-					continue;
-				}
-				for (Iterator<Transition> j = machine.getCurrentState()
-						.getTransitions().iterator(); j.hasNext();) {
-					Transition nextTrans = j.next();
-					if (nextTrans instanceof CElementEvent) {
-						CElement elem = ((CElementEvent) nextTrans)
-								.getCElement();
-						if (contains(elem, element))
-							return true;
+		CStateMachine machine;
+		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
+		synchronized(list) {
+			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+			while (i.hasNext()) {
+				machine = i.next();
+				machine.consumes(false);
+				if (machine.isActive()) {
+					// because animation can fire events before the machine is initialized
+					if (machine.getCurrentState() == null) {
+						machine.initStatesAndTransitions();
+						continue;
+					}
+					for (Iterator<Transition> j = machine.getCurrentState()
+							.getTransitions().iterator(); j.hasNext();) {
+						Transition nextTrans = j.next();
+						if (nextTrans instanceof CElementEvent) {
+							CElement elem = ((CElementEvent) nextTrans)
+									.getCElement();
+							if (contains(elem, element))
+								return true;
+						}
 					}
 				}
 			}
 		}
 		return false;
+		
+//		for (ListIterator<CStateMachine> i = stateMachines.listIterator(); i
+//				.hasNext();) {
+//			CStateMachine machine = i.next();
+//			machine.consumes(false);
+//			if (machine.isActive()) {
+//				// because animation can fire events before the machine is initialized
+//				if (machine.getCurrentState() == null) {
+//					machine.initStatesAndTransitions();
+//					continue;
+//				}
+//				for (Iterator<Transition> j = machine.getCurrentState()
+//						.getTransitions().iterator(); j.hasNext();) {
+//					Transition nextTrans = j.next();
+//					if (nextTrans instanceof CElementEvent) {
+//						CElement elem = ((CElementEvent) nextTrans)
+//								.getCElement();
+//						if (contains(elem, element))
+//							return true;
+//					}
+//				}
+//			}
+//		}
+//		return false;
 	}
 
 	/**
@@ -454,18 +515,37 @@ public class Canvas extends JPanel implements MouseListener,
 	 *            The event to process
 	 */
 	private void processEvent(InputEvent e) {
+		CStateMachine machine;
 		boolean isConsumed = false;
-		for (ListIterator<CStateMachine> i = stateMachines.listIterator(); i
-				.hasNext();) {
-			if (isConsumed)
-				break;
-			CStateMachine machine = i.next();
-			machine.consumes(false);
-			if (machine.isActive()) {
-				machine.processEvent(e);
-				isConsumed = machine.hasConsumed();
+		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
+		synchronized(list) {
+			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+			while (i.hasNext()) {
+				machine = i.next();
+				if (isConsumed)
+					break;
+				machine.consumes(false);
+				if (machine.isActive()) {
+					machine.processEvent(e);
+					isConsumed = machine.hasConsumed();
+				}
 			}
 		}
+		
+		
+//		boolean isConsumed = false;
+//		
+//		for (ListIterator<CStateMachine> i = stateMachines.listIterator(); i
+//				.hasNext();) {
+//			if (isConsumed)
+//				break;
+//			CStateMachine machine = i.next();
+//			machine.consumes(false);
+//			if (machine.isActive()) {
+//				machine.processEvent(e);
+//				isConsumed = machine.hasConsumed();
+//			}
+//		}
 
 	}
 
@@ -481,6 +561,7 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public void mouseClicked(MouseEvent arg0) {
 		pickAndProcess(arg0);
+		requestFocusInWindow();
 	}
 
 	/**
@@ -550,16 +631,32 @@ public class Canvas extends JPanel implements MouseListener,
 	 *         contained a transition of class <code>cl</code>.
 	 */
 	protected boolean hasTransitionOfClass(Class cl) {
-		for (Iterator i = stateMachines.iterator(); i.hasNext();) {
-			CStateMachine machine = (CStateMachine) i.next();
-			if (machine.isActive()) {
-				if (machine.getCurrentState() == null)
-					continue;
-				if (machine.hasTransitionOfClass(cl))
-					return true;
+		CStateMachine machine;
+		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
+		synchronized(list) {
+			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+			while (i.hasNext()) {
+				machine = i.next();
+				if (machine.isActive()) {
+					if (machine.getCurrentState() == null)
+						continue;
+					if (machine.hasTransitionOfClass(cl))
+						return true;
+				}
 			}
 		}
 		return false;
+		
+//		for (Iterator<CStateMachine> i = stateMachines.iterator(); i.hasNext();) {
+//			CStateMachine machine = (CStateMachine) i.next();
+//			if (machine.isActive()) {
+//				if (machine.getCurrentState() == null)
+//					continue;
+//				if (machine.hasTransitionOfClass(cl))
+//					return true;
+//			}
+//		}
+//		return false;
 	}
 
 	// events incoming from java.awt (MouseEvent)
@@ -1280,7 +1377,7 @@ public class Canvas extends JPanel implements MouseListener,
 	 * 
 	 * @return the state machines attached to this canvas.
 	 */
-	public LinkedList getSMs() {
+	public LinkedList<CStateMachine> getSMs() {
 		return stateMachines;
 	}
 
@@ -2031,9 +2128,11 @@ public class Canvas extends JPanel implements MouseListener,
 	}
 
 	protected void registerMachine(CStateMachine machine) {
-		if (!stateMachines.contains(machine)) {
-			stateMachines.add(machine);
-			// machine.addStateMachineListener(updatePicker);
+		synchronized(stateMachines) {
+			if (!stateMachines.contains(machine)) {
+				stateMachines.add(machine);
+				// machine.addStateMachineListener(updatePicker);
+			}
 		}
 	}
 

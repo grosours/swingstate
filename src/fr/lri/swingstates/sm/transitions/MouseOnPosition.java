@@ -128,7 +128,6 @@ public abstract class MouseOnPosition extends EventOnPosition {
 	 */
 	public boolean matches(EventObject eventObject) {
 		if(eventObject instanceof MouseEvent) {
-			triggeringEvent = eventObject;
 			return true;
 		}
 		return false;
@@ -137,10 +136,12 @@ public abstract class MouseOnPosition extends EventOnPosition {
 	protected boolean matches(EventObject eventObject, int typeEvent) {
 		if(!(eventObject instanceof MouseEvent)) return false;
 		MouseEvent me = (MouseEvent)eventObject;
-		triggeringEvent = me;
-		return (me.getID() == typeEvent)
+		if((me.getID() == typeEvent)
 			&& (modifier == Utils.modifiers(me) || modifier == BasicInputStateMachine.ANYMODIFIER)
-			&& (button == Utils.button(me) || button == BasicInputStateMachine.ANYBUTTON);
+			&& (button == Utils.button(me) || button == BasicInputStateMachine.ANYBUTTON)) {
+			return true;
+		}
+		return false;
 	}
 	
 }
