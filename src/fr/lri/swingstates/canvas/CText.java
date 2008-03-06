@@ -6,9 +6,11 @@
 package fr.lri.swingstates.canvas;
 
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
@@ -64,22 +66,23 @@ public class CText extends CShape {
 	public void paint(Graphics g){
 		Graphics2D g2d = (Graphics2D)g;
 		Shape saveClip = g2d.getClip();
-		
-		if(renderingHints != null) {
+		AffineTransform saveTransform = g2d.getTransform();
+		RenderingHints saveRenderingHints = g2d.getRenderingHints();
+		if (renderingHints != null) {
 			g2d.addRenderingHints(renderingHints);
 		}
-		g2d.setFont(font);
-		g2d.setPaint(fillPaint);
-		
-		if(clip!=null && clip != canvas.clip) {
-			if(clip == DEFAULT_CLIP) {
+		if (clip != null && (canvas != null && clip != canvas.clip)) {
+			if (clip == DEFAULT_CLIP) {
 				g2d.setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 			} else {
 				g2d.transform(clip.getAbsTransform());
 				g2d.setClip(clip.getShape());
-				g2d.setTransform(canvas.transform);
+				g2d.setTransform(saveTransform);
 			}
 		}
+		
+		g2d.setFont(font);
+		g2d.setPaint(fillPaint);
 		
 		if(filled || outlined) {
 			CShape s = parent;
@@ -103,22 +106,26 @@ public class CText extends CShape {
 			g2d.scale (sx, sy); 
 			g2d.translate (-bounds.getWidth()*rx, -bounds.getHeight()*ry);
 			if(filled) {
-				if(transparencyFill != null) g2d.setComposite(transparencyFill);
+				Composite comp = g2d.getComposite();
+				if (transparencyFill != null)
+					g2d.setComposite(transparencyFill);
 				g2d.drawString(text, 0, -(int)yOffSet);
-				g2d.setComposite(canvas.transparency);
+				g2d.setComposite(comp);
 			}
-			g2d.setTransform(canvas.transform);
+			g2d.setTransform(saveTransform);
 			if(outlined) {
 				g2d.setStroke(stroke);
 				g2d.transform(getAbsTransform());
-				if(transparencyOutline != null) g2d.setComposite(transparencyOutline);
+				Composite comp = g2d.getComposite();
+				if (transparencyOutline != null)
+					g2d.setComposite(transparencyOutline);
 				g2d.setPaint(outlinePaint);
 				g2d.draw(shape);
-				g2d.setTransform(canvas.transform);
-				g2d.setComposite(canvas.transparency);
+				g2d.setTransform(saveTransform);
+				g2d.setComposite(comp);
 			}
-			if((clip!=null && clip != canvas.clip) || clip == DEFAULT_CLIP) g2d.setClip(saveClip);
-			g2d.setRenderingHints(canvas.renderingHints);
+			g2d.setClip(saveClip);
+			g2d.setRenderingHints(saveRenderingHints);
 		}
 
 	}
@@ -384,8 +391,8 @@ public class CText extends CShape {
 	 * {@inheritDoc}
 	 */
 	public CElement setAntialiased(boolean a) {
-		if(a != FRC.isAntiAliased())
-			FRC = new FontRenderContext(null, a, false);
+		if(a) setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		else setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 		setText(text);
 		return this;
 	}

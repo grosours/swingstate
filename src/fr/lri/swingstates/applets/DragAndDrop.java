@@ -38,7 +38,6 @@ public class DragAndDrop extends BasicApplet {
 		canvas.newPolyLine(150, 250).lineTo(190, 240).lineTo(200, 200).lineTo(210, 240).lineTo(250, 250).
 		lineTo(210, 260).lineTo(200, 300).lineTo(190, 260).close().setFillPaint(Color.YELLOW).setTransparencyFill(0.5f);
 		canvas.newRectangle(150, 150, 40, 30).setFillPaint(Color.BLUE);
-		
 		sm = new CStateMachine(canvas) {
 			
 			CElement toMove = null;

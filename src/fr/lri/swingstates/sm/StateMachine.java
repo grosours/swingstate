@@ -25,7 +25,7 @@ import fr.lri.swingstates.events.VirtualTimerEvent;
  *  
  * <p>A state machine consists of a set of <i>states</i> and a set of <i>transitions</i>.
  * Each transition goes from an input state to an output state (which can be the same),
- * and is labelled by an <i>event</i>, an optional <i>guard</i> and an optional <i>action</i>.
+ * and is labeled by an <i>event</i>, an optional <i>guard</i> and an optional <i>action</i>.
  * At any one time, the machine is one of its states, called the <i>current state</i>. 
  * When the state machine receives an event, it looks for the first outgoing transition 
  * of the current state that matches the event and whose <code>guard</code> method returns True.
@@ -546,7 +546,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	}
 
 	/**
-	 * Look up a state by its name. The state's name can be set explicitely when creating it (<code>new State("myState")</code>),
+	 * Look up a state by its name. The state's name can be set explicitly when creating it (<code>new State("myState")</code>),
 	 * otherwise the state name is the name of the field where it is stored in the state machine (<code>public State myState = new State()</code>).
 	 * Note that for this to work, the field must be declared public.
 	 * @param s the name of the state to look up

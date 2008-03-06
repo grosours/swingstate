@@ -282,14 +282,13 @@ public class CShape implements Cloneable, CElement {
 		if (renderingHints != null) {
 			g2d.addRenderingHints(renderingHints);
 		}
-
-		if (clip != null && clip != canvas.clip) {
+		if (clip != null && (canvas != null && clip != canvas.clip)) {
 			if (clip == DEFAULT_CLIP) {
 				g2d.setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 			} else {
 				g2d.transform(clip.getAbsTransform());
 				g2d.setClip(clip.getShape());
-				g2d.setTransform(canvas.transform);
+				g2d.setTransform(saveTransform);
 			}
 		}
 
@@ -301,7 +300,7 @@ public class CShape implements Cloneable, CElement {
 				g2d.setComposite(transparencyFill);
 			g2d.setPaint(fillPaint);
 			g2d.fill(getShape());
-			if (transparencyFill != null) g2d.setComposite(comp);
+			g2d.setComposite(comp);
 		}
 		if (outlined) {
 			Composite comp = g2d.getComposite();
@@ -309,14 +308,11 @@ public class CShape implements Cloneable, CElement {
 				g2d.setComposite(transparencyOutline);
 			g2d.setPaint(outlinePaint);
 			g2d.draw(shape);
-			if (transparencyOutline != null)
-				g2d.setComposite(comp);
+			g2d.setComposite(comp);
 		}
 		g2d.setTransform(saveTransform);
-		if ((clip != null && clip != canvas.clip) || clip == DEFAULT_CLIP)
-			g2d.setClip(saveClip);
-		if (renderingHints != null)
-			g2d.setRenderingHints(saveRenderingHints);
+		g2d.setClip(saveClip);
+		g2d.setRenderingHints(saveRenderingHints);
 	}
 
 	/**
@@ -619,7 +615,8 @@ public class CShape implements Cloneable, CElement {
 	 * @return this shape.
 	 */
 	public CElement setAntialiased(boolean a) {
-		setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		if(a) setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		else setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 		repaint();
 		return this;
 	}

@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.ListIterator;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -64,8 +63,8 @@ import fr.lri.swingstates.canvas.CStateMachine.WheelOnTag;
 import fr.lri.swingstates.events.Picker;
 import fr.lri.swingstates.events.PickerCEvent;
 import fr.lri.swingstates.events.PickerEvent;
-import fr.lri.swingstates.events.VirtualEvent;
 import fr.lri.swingstates.events.VirtualCanvasEvent;
+import fr.lri.swingstates.events.VirtualEvent;
 import fr.lri.swingstates.sm.Transition;
 import fr.lri.swingstates.sm.transitions.Enter;
 
@@ -288,15 +287,17 @@ public class Canvas extends JPanel implements MouseListener,
 //		if(isOpaque()) g.fillRect(0, 0, getWidth(), getHeight());
 //		else g.clearRect(0, 0, getWidth(), getHeight());
 
-		if (renderingHints == null) {
-			renderingHints = g2d.getRenderingHints();
-		} else {
-			renderingHints.add(g2d.getRenderingHints());
-		}
+//		if (renderingHints == null) {
+//			renderingHints = g2d.getRenderingHints();
+//		} else {
+//			renderingHints.add(g2d.getRenderingHints());
+//		}
 		transparency = (AlphaComposite) g2d.getComposite();
 		transform = g2d.getTransform();
 
-		g2d.setRenderingHints(renderingHints);
+		if (renderingHints != null) g2d.addRenderingHints(renderingHints);
+//		g2d.setRenderingHints(renderingHints);
+		
 		if (clip != null)
 			g2d.setClip(clip);
 		else
@@ -836,8 +837,8 @@ public class Canvas extends JPanel implements MouseListener,
 		CShape picked = null;
 		if (displayOrder == null)
 			return null;
-		for (Iterator i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = (CShape) (i.next());
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+			CShape sms = i.next();
 			if (sms.isPickable())
 				if (sms.pick(p, 2) != null)
 					picked = sms;
@@ -875,8 +876,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape pickShapeHavingTag(Point2D p, CTag tag) {
 		CShape picked = null;
-		for (Iterator i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = (CShape) (i.next());
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+			CShape sms = i.next();
 			if (sms.isPickable())
 				if (sms.pick(p, 2) != null)
 					if (sms.hasTag(tag))
@@ -1425,8 +1426,14 @@ public class Canvas extends JPanel implements MouseListener,
 	 * @return this canvas
 	 */
 	public CElement setAntialiased(boolean a) {
-		setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-				RenderingHints.VALUE_ANTIALIAS_ON);
+		if(a) {
+			setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		}
+		else {
+			setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+			setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+		}
 		repaint();
 		return this;
 	}
@@ -1473,8 +1480,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setShape(Shape sh) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setShape(sh);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setShape(sh);
 		return this;
 	}
 
@@ -1482,8 +1489,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setParent(CShape parent) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setParent(parent);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setParent(parent);
 		return this;
 	}
 
@@ -1491,8 +1498,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setStroke(Stroke str) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setStroke(str);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setStroke(str);
 		return this;
 	}
 
@@ -1500,8 +1507,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransparencyFill(AlphaComposite transparencyFill) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setTransparencyFill(transparencyFill);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setTransparencyFill(transparencyFill);
 		return this;
 	}
 
@@ -1509,8 +1516,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransparencyFill(float alpha) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setTransparencyFill(alpha);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setTransparencyFill(alpha);
 		return this;
 	}
 
@@ -1518,8 +1525,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransparencyOutline(AlphaComposite transparencyOutline) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setTransparencyOutline(transparencyOutline);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setTransparencyOutline(transparencyOutline);
 		return this;
 	}
 
@@ -1527,8 +1534,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransparencyOutline(float alpha) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setTransparencyOutline(alpha);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setTransparencyOutline(alpha);
 		return this;
 	}
 
@@ -1536,8 +1543,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setFillPaint(Paint fp) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setFillPaint(fp);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setFillPaint(fp);
 		return this;
 	}
 
@@ -1545,8 +1552,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setOutlinePaint(Paint op) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setOutlinePaint(op);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setOutlinePaint(op);
 		return this;
 	}
 
@@ -1568,8 +1575,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public boolean isFilled() {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			if (!((CShape) i.next()).isFilled())
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			if (!i.next().isFilled())
 				return false;
 		return true;
 	}
@@ -1592,8 +1599,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setFilled(boolean f) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setFilled(f);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setFilled(f);
 		return this;
 	}
 
@@ -1601,8 +1608,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public boolean isOutlined() {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			if (!((CShape) i.next()).isOutlined())
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			if (!i.next().isOutlined())
 				return false;
 		return true;
 	}
@@ -1625,8 +1632,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setOutlined(boolean f) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setFilled(f);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setFilled(f);
 		return this;
 	}
 
@@ -1634,8 +1641,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public boolean isDrawable() {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			if (!((CShape) i.next()).isDrawable())
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			if (!i.next().isDrawable())
 				return false;
 		return true;
 	}
@@ -1644,8 +1651,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setDrawable(boolean f) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setFilled(f);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setFilled(f);
 		return this;
 	}
 
@@ -1653,8 +1660,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public boolean isPickable() {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			if (!((CShape) i.next()).isPickable())
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			if (!i.next().isPickable())
 				return false;
 		return true;
 	}
@@ -1663,8 +1670,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setPickable(boolean pick) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setPickable(pick);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setPickable(pick);
 		return this;
 	}
 
@@ -1672,8 +1679,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setReferencePoint(double x, double y) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setReferencePoint(x, y);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setReferencePoint(x, y);
 		return this;
 	}
 
@@ -1681,8 +1688,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransformToIdentity() {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).setTransformToIdentity();
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().setTransformToIdentity();
 		return this;
 	}
 
@@ -1690,8 +1697,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement translateBy(double tx, double ty) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).translateBy(tx, ty);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().translateBy(tx, ty);
 		return this;
 	}
 
@@ -1699,8 +1706,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement translateTo(double tx, double ty) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).translateTo(tx, ty);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().translateTo(tx, ty);
 		return this;
 	}
 
@@ -1708,8 +1715,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement scaleBy(double sx, double sy) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).scaleBy(sx, sy);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().scaleBy(sx, sy);
 		return this;
 	}
 
@@ -1717,8 +1724,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement scaleBy(double s) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).scaleBy(s);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().scaleBy(s);
 		return this;
 	}
 
@@ -1726,8 +1733,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement scaleTo(double sx, double sy) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).scaleTo(sx, sy);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().scaleTo(sx, sy);
 		return this;
 	}
 
@@ -1735,8 +1742,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement scaleTo(double s) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).scaleTo(s);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().scaleTo(s);
 		return this;
 	}
 
@@ -1744,8 +1751,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement rotateBy(double theta) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).rotateTo(theta);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().rotateTo(theta);
 		return this;
 	}
 
@@ -1753,8 +1760,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement rotateTo(double theta) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).rotateTo(theta);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().rotateTo(theta);
 		return this;
 	}
 
@@ -1953,8 +1960,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public void removeGhost() {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).removeGhost();
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().removeGhost();
 	}
 
 	/**
@@ -1970,8 +1977,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public double getMinX() {
 		double minX = Double.MAX_VALUE;
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			minX = Math.min(((CShape) i.next()).getMinX(), minX);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			minX = Math.min(i.next().getMinX(), minX);
 		return minX;
 	}
 
@@ -1980,8 +1987,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public double getMaxX() {
 		double maxX = Double.MIN_VALUE;
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			maxX = Math.max(((CShape) i.next()).getMaxX(), maxX);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			maxX = Math.max(i.next().getMaxX(), maxX);
 		return maxX;
 	}
 
@@ -1997,8 +2004,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public double getMinY() {
 		double minY = Double.MAX_VALUE;
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			minY = Math.min(((CShape) i.next()).getMinY(), minY);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			minY = Math.min(i.next().getMinY(), minY);
 		return minY;
 	}
 
@@ -2007,8 +2014,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public double getMaxY() {
 		double maxY = Double.MIN_VALUE;
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			maxY = Math.max(((CShape) i.next()).getMaxY(), maxY);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			maxY = Math.max(i.next().getMaxY(), maxY);
 		return maxY;
 	}
 
@@ -2071,8 +2078,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement addTag(CExtensionalTag t) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).addTag(t);
+		for (Iterator<CShape>i = displayOrder.iterator(); i.hasNext();)
+			i.next().addTag(t);
 		return this;
 	}
 
@@ -2080,8 +2087,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement addTag(String t) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).addTag(t);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().addTag(t);
 		return this;
 	}
 
@@ -2089,8 +2096,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement removeTag(CExtensionalTag t) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).removeTag(t);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().removeTag(t);
 		return this;
 	}
 
@@ -2098,8 +2105,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement removeTag(String t) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).removeTag(t);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().removeTag(t);
 		return this;
 	}
 
@@ -2114,8 +2121,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 * @see fr.lri.swingstates.canvas.CShape#animate(Animation)
 	 */
 	public CElement animate(Animation anim) {
-		for (Iterator i = displayOrder.iterator(); i.hasNext();)
-			((CShape) i.next()).animate(anim);
+		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+			i.next().animate(anim);
 		return this;
 	}
 

@@ -7,12 +7,14 @@ package fr.lri.swingstates.canvas;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -223,18 +225,19 @@ public class CWidget extends CShape {
 	public void paint(Graphics g){
 		Graphics2D g2d = (Graphics2D)g;
 		Shape saveClip = g2d.getClip();
-		
-		if(renderingHints != null) {
+		AffineTransform saveTransform = g2d.getTransform();
+		Composite saveComposite = g2d.getComposite();
+		RenderingHints saveRenderingHints = g2d.getRenderingHints();
+		if (renderingHints != null) {
 			g2d.addRenderingHints(renderingHints);
 		}
-		
-		if(clip!=null && clip != canvas.clip) {
-			if(clip == DEFAULT_CLIP) {
+		if (clip != null && (canvas != null && clip != canvas.clip)) {
+			if (clip == DEFAULT_CLIP) {
 				g2d.setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 			} else {
 				g2d.transform(clip.getAbsTransform());
 				g2d.setClip(clip.getShape());
-				g2d.setTransform(canvas.transform);
+				g2d.setTransform(saveTransform);
 			}
 		}
 		
@@ -257,11 +260,12 @@ public class CWidget extends CShape {
 			g2d.scale (sx, sy); 
 			g2d.translate (-bounds.getWidth()*rx, -bounds.getHeight()*ry);
 			if(filled) {
-				if(transparencyFill != null) g2d.setComposite(transparencyFill);
+				if (transparencyFill != null)
+					g2d.setComposite(transparencyFill);
 				g2d.drawImage(bi, 0, 0, canvas);
-				g2d.setComposite(canvas.transparency);
+				g2d.setComposite(saveComposite);
 			}
-			g2d.setTransform(canvas.transform);
+			g2d.setTransform(saveTransform);
 			if(outlined) {
 				g2d.setPaint(outlinePaint);
 				g2d.setStroke(stroke);
@@ -269,11 +273,11 @@ public class CWidget extends CShape {
 				if(transparencyOutline != null) g2d.setComposite(transparencyOutline);
 				g2d.setPaint(outlinePaint);
 				g2d.draw(shape);
-				g2d.setTransform(canvas.transform);
-				g2d.setComposite(canvas.transparency);
+				g2d.setTransform(saveTransform);
+				g2d.setComposite(saveComposite);
 			}
-			if((clip!=null && clip != canvas.clip) || clip == DEFAULT_CLIP) g2d.setClip(saveClip);
-			g2d.setRenderingHints(canvas.renderingHints);
+			g2d.setClip(saveClip);
+			g2d.setRenderingHints(saveRenderingHints);
 		}
 	}
 
