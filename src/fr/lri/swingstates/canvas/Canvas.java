@@ -100,7 +100,6 @@ import fr.lri.swingstates.sm.transitions.Enter;
  * @see fr.lri.swingstates.canvas.CStateMachine
  * @see fr.lri.swingstates.canvas.CShape
  * @author Caroline Appert
- * 
  */
 public class Canvas extends JPanel implements MouseListener,
 		MouseMotionListener, MouseWheelListener, KeyListener, CElement {

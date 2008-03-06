@@ -332,15 +332,13 @@ public class GestureUtils {
 
 		gestureBB.setFillPaint(new Color(250, 240, 230));
 
-		exampleView.fixReferenceShapeToCurrent().setPickable(false);
+		exampleView.fixReferenceShapeToCurrent().setPickable(false).setAntialiased(true);
 		gestureBB.fixReferenceShapeToCurrent();
 		CEllipse startPoint = canvas.newEllipse(exampleView.getStartX() - sizeStartPoint / 2, exampleView.getStartY() - sizeStartPoint / 2, sizeStartPoint, sizeStartPoint);
-		startPoint.setFillPaint(Color.RED).setOutlinePaint(Color.RED).setPickable(false);
+		startPoint.setFillPaint(Color.RED).setOutlinePaint(Color.RED).setPickable(false).setAntialiased(true);
 
 		gestureBB.addChild(exampleView);
 		exampleView.addChild(startPoint);
-		exampleView.setAntialiased(true);
-		startPoint.setAntialiased(true);
 		
 		return gestureBB;
 	}

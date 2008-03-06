@@ -484,9 +484,9 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 		LinkedList<Transition> trans = currentState.getTransitions();
 		Transition hasFired = null;
 		if(trans!=null){
-			for(Iterator i = trans.iterator(); i.hasNext(); ){
+			for(Iterator<Transition> i = trans.iterator(); i.hasNext(); ){
 				if(hasFired != null) break;
-				Transition t = (Transition)(i.next());
+				Transition t = i.next();
 				if(t.matches(event)) {
 					t.setTriggeringEvent(event);
 					if (fireTransition(t)) {
@@ -526,18 +526,19 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * @return true if the transition was fired, false otherwise
 	 */
 	protected boolean fireTransition (Transition t) {
+		final State outputState = t.getOutputState();
 		if(!inited) initStatesAndTransitions();
 		if (! t.guard()) {
 			return false;
 		}
-		if (t.getOutputState () != null && t.getOutputState() != currentState) currentState.leave();
+		if (outputState != null && outputState != currentState) currentState.leave();
 		t.action();
-		if (t.getOutputState () != null && t.getOutputState() != currentState) {
+		if (outputState != null && outputState != currentState) {
 			if(watcher != null) {
-				watcher.fireStateChanged(t, currentState, t.getOutputState());
+				watcher.fireStateChanged(t, currentState, outputState);
 			}
-			currentState = t.getOutputState ();
-			t.getOutputState().enter();
+			currentState = outputState;
+			outputState.enter();
 		} else {
 			if(watcher != null) watcher.fireStateLooped(t, currentState);
 		}
