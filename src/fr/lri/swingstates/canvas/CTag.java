@@ -418,8 +418,8 @@ public abstract class CTag extends Tag implements CElement {
 	 */
 	public CElement setDrawable(boolean f){ 
 		reset(); 
-		while(hasNext())
-			(nextShape()).setDrawable(f);
+		while(hasNext()) 
+			nextShape().setDrawable(f);
 		return this;
 	}
 
