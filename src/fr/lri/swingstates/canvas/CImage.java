@@ -5,8 +5,10 @@
 */
 package fr.lri.swingstates.canvas;
 
+import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
@@ -106,18 +108,20 @@ public class CImage extends CShape {
 	public void paint(Graphics g){
 		Graphics2D g2d = (Graphics2D)g;
 		Shape saveClip = g2d.getClip();
+		AffineTransform saveTransform = g2d.getTransform();
+		RenderingHints saveRenderingHints = g2d.getRenderingHints();
+		Composite saveComposite = g2d.getComposite();
 		
-		if(renderingHints != null) {
+		if (renderingHints != null) {
 			g2d.addRenderingHints(renderingHints);
 		}
-		
-		if(clip!=null && clip != canvas.clip) {
-			if(clip == DEFAULT_CLIP) {
+		if (clip != null && (canvas != null && clip != canvas.clip)) {
+			if (clip == DEFAULT_CLIP) {
 				g2d.setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 			} else {
 				g2d.transform(clip.getAbsTransform());
 				g2d.setClip(clip.getShape());
-				g2d.setTransform(canvas.transform);
+				g2d.setTransform(saveTransform);
 			}
 		}
 		
@@ -143,21 +147,21 @@ public class CImage extends CShape {
 				if (transparencyFill != null)
 					g2d.setComposite(transparencyFill);
 				g2d.drawImage(image, 0, 0, canvas);
+				g2d.setComposite(saveComposite);
 			}
-			g2d.setTransform(canvas.transform);
-			g2d.setComposite(canvas.transparency);
+			g2d.setTransform(saveTransform);
 			if(outlined) {
 				g2d.setStroke(stroke);
 				g2d.transform(getAbsTransform());
 				if(transparencyOutline != null) g2d.setComposite(transparencyOutline);
 				g2d.setPaint(outlinePaint);
 				g2d.draw(shape);
-				g2d.setTransform(canvas.transform);
+				g2d.setTransform(saveTransform);
+				g2d.setComposite(saveComposite);
 			}
-			if((clip!=null && clip != canvas.clip) || clip == DEFAULT_CLIP) g2d.setClip(saveClip);
-			g2d.setRenderingHints(canvas.renderingHints);
-			g2d.setComposite(canvas.transparency);
 		}
+		g2d.setClip(saveClip);
+		g2d.setRenderingHints(saveRenderingHints);
 	}
 	
 	/**

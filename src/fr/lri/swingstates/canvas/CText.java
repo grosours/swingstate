@@ -68,6 +68,8 @@ public class CText extends CShape {
 		Shape saveClip = g2d.getClip();
 		AffineTransform saveTransform = g2d.getTransform();
 		RenderingHints saveRenderingHints = g2d.getRenderingHints();
+		Composite saveComposite = g2d.getComposite();
+		
 		if (renderingHints != null) {
 			g2d.addRenderingHints(renderingHints);
 		}
@@ -106,23 +108,21 @@ public class CText extends CShape {
 			g2d.scale (sx, sy); 
 			g2d.translate (-bounds.getWidth()*rx, -bounds.getHeight()*ry);
 			if(filled) {
-				Composite comp = g2d.getComposite();
 				if (transparencyFill != null)
 					g2d.setComposite(transparencyFill);
 				g2d.drawString(text, 0, -(int)yOffSet);
-				g2d.setComposite(comp);
+				g2d.setComposite(saveComposite);
 			}
 			g2d.setTransform(saveTransform);
 			if(outlined) {
 				g2d.setStroke(stroke);
 				g2d.transform(getAbsTransform());
-				Composite comp = g2d.getComposite();
 				if (transparencyOutline != null)
 					g2d.setComposite(transparencyOutline);
 				g2d.setPaint(outlinePaint);
 				g2d.draw(shape);
 				g2d.setTransform(saveTransform);
-				g2d.setComposite(comp);
+				g2d.setComposite(saveComposite);
 			}
 			g2d.setClip(saveClip);
 			g2d.setRenderingHints(saveRenderingHints);
