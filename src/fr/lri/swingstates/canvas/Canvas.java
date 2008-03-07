@@ -332,9 +332,10 @@ public class Canvas extends JPanel implements MouseListener,
 	public void processEvent(String event, Point2D pt) {
 		boolean isConsumed = false;
 		CShape picked = pick(pt);
-		VirtualEvent toProcess = picked != null ? new VirtualCanvasEvent(event,
-				picked, pt) : new VirtualCanvasEvent(event, null, pt);
-
+//		VirtualEvent toProcess = picked != null ? new VirtualCanvasEvent(event,
+//				picked, pt) : new VirtualCanvasEvent(event, null, pt);
+		VirtualEvent toProcess = new VirtualCanvasEvent(event, picked, pt);
+		toProcess.setSource(this);
 		CStateMachine machine;
 		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
 		synchronized(list) {

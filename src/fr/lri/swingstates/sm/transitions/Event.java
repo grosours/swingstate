@@ -115,7 +115,9 @@ public class Event extends Transition {
 			return classEvent.isAssignableFrom(eventObject.getClass());
 		} else {
 			if (eventObject instanceof VirtualEvent) {
-				return event.compareTo(((VirtualEvent) eventObject).getNameEvent()) == 0;
+				String nameEvent = ((VirtualEvent) eventObject).getNameEvent();
+				return (event == null && nameEvent == null)
+				|| (event != null && nameEvent != null && event.compareTo(nameEvent) == 0);
 			}
 		}
 		return false;

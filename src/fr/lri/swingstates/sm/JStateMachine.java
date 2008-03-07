@@ -24,12 +24,9 @@ import javax.swing.JComponent;
 import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
 
-import fr.lri.swingstates.canvas.CShape;
-import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.events.Picker;
 import fr.lri.swingstates.events.PickerEvent;
 import fr.lri.swingstates.events.Utils;
-import fr.lri.swingstates.events.VirtualCanvasEvent;
 import fr.lri.swingstates.sm.transitions.EventOnPosition;
 
 /**

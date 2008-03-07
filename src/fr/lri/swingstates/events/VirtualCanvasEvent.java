@@ -26,7 +26,7 @@ public class VirtualCanvasEvent extends VirtualEvent {
 	 * @param pt The point on which this event occured.
 	 */
 	public VirtualCanvasEvent(Point2D pt) {
-		super("");
+		super(null, pt);
 		point = pt;
 	}
 	
@@ -36,7 +36,7 @@ public class VirtualCanvasEvent extends VirtualEvent {
 	 * @param pt The point on which this event occured.
 	 */
 	public VirtualCanvasEvent(String n, Point2D pt) {
-		super(n);
+		super(n, pt);
 		point = pt;
 	}
 	
@@ -44,10 +44,10 @@ public class VirtualCanvasEvent extends VirtualEvent {
 	 * Builds a <code>VirtualShapeEvent</code>.
 	 * @param n The name of the event.
 	 * @param shape The <code>CShape</code>.
-	 * @param pt The point on which this event occured.
+	 * @param pt The point on which this event occurred.
 	 */
 	public VirtualCanvasEvent(String n, CShape shape, Point2D pt) {
-		super(n);
+		super(n, pt);
 		point = pt;
 		cshape = shape;
 	}
@@ -55,10 +55,10 @@ public class VirtualCanvasEvent extends VirtualEvent {
 	/**
 	 * Builds a <code>VirtualShapeEvent</code>.
 	 * @param shape The <code>CShape</code>.
-	 * @param pt The point on which this event occured.
+	 * @param pt The point on which this event occurred.
 	 */
 	public VirtualCanvasEvent(CShape shape, Point2D pt) {
-		super("");
+		super(null, pt);
 		point = pt;
 		cshape = shape;
 	}

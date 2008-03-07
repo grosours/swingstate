@@ -47,6 +47,15 @@ public class VirtualEvent extends EventObject {
 		super(n);
 		nameEvent = n;
 	}
+	
+	/**
+	 * Builds a virtual event. 
+	 * @param n The name of the virtual event.
+	 */
+	public VirtualEvent(String n, Object source) {
+		super(source);
+		nameEvent = n;
+	}
 
 	/**
 	 * Returns the name of the virtual event.

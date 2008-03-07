@@ -24,7 +24,7 @@ public class VirtualAnimationEvent extends VirtualEvent {
 	 * @param anim The animation.
 	 */
 	public VirtualAnimationEvent(String nameEvent, Animation anim) {
-		super(nameEvent);
+		super(nameEvent, anim);
 		animation = anim;
 	}
 	

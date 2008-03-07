@@ -24,7 +24,7 @@ public class VirtualCElementEvent extends VirtualEvent {
 	 * @param ce The <code>CElement</code>.
 	 */
 	public VirtualCElementEvent(CElement ce) {
-		super("CElement");
+		super("CElement", ce);
 		cElement = ce;
 	}
 

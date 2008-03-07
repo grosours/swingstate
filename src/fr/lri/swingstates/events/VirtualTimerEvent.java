@@ -24,7 +24,7 @@ public class VirtualTimerEvent extends VirtualEvent {
 	 * @param timer The timer.
 	 */
 	public VirtualTimerEvent(Timer timer) {
-		super(StateMachine.TIME_OUT);
+		super(StateMachine.TIME_OUT, timer);
 		this.timer = timer;
 	}
 	

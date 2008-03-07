@@ -6,7 +6,6 @@ import java.awt.geom.Point2D;
 import java.util.EventObject;
 
 import fr.lri.swingstates.events.Utils;
-import fr.lri.swingstates.events.VirtualCanvasEvent;
 import fr.lri.swingstates.sm.BasicInputStateMachine;
 
 /**

@@ -445,6 +445,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	public void fireEvent(String nameEvent) {
 		if(stateMachineListeners == null) return;
 		VirtualEvent event = new VirtualEvent(nameEvent);
+		event.setSource(this);
 		for(Iterator<StateMachineListener> i = stateMachineListeners.iterator(); i.hasNext(); ) {
 			i.next().eventOccured(event);
 		}
