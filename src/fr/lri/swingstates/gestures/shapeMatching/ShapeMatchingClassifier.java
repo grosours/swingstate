@@ -25,11 +25,12 @@ import fr.lri.swingstates.gestures.GestureUtils;
 import fr.lri.swingstates.gestures.Score;
 
 /**
- * A very simple recognizer that performs simple shape matching:
+ * A very simple recognizer that performs simple shape matching based on a single example per class (one template):
  * <ol>
- * <li> Resample the gesture to classify so it contains the number of uniformly spaced points as the gesture examples contained in this classifier. </li>
- * <li> Scale the gesture so its bounding box matches the bounding box of the gesture examples contained in this classifier. </li>
- * <li> Returns the name of the class for the example that minimizes sum of distances point to point with the input gesture. </li>
+ * <li> Resample the gesture to classify so it contains the number of uniformly spaced points as the gesture templates contained in this classifier. </li>
+ * <li> For each template, scale the input gesture so its bounding box matches the bounding box of the template
+ * and compute the sum of distances point to point between the template points and the input gesture points. </li>
+ * <li> Returns the name of the class for the template that minimizes this sum of distances. </li>
  * </ol>
  * 
  * @author Caroline Appert
