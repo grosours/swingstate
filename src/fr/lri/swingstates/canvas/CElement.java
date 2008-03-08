@@ -396,12 +396,14 @@ public interface CElement {
 	boolean hasTag(CTag t);
 	
 	/**
-	 * Calls <code>above(CShape before)</code> for every CShape contained in this <code>CElement</code>.
-	 * @param before The shape that must be right below every shape contained in this <code>CElement</code> in the display list
+	 * Changes the display list order so that every CShape contained in this CElement is right above 
+	 * the top most shape in another CElement. The relative display order between shapes contained in this CElement is unchanged.
+	 * <b>WARNING</b>: If this CElement also contains one of the elements contained in <code>before</code>, this method does nothing.
+	 * @param before The element that must be right below every shape contained in this <code>CElement</code> in the display list
 	 * @return This <code>CElement</code>
-	 * @see fr.lri.swingstates.canvas.CShape#above(CShape)
+	 * @see fr.lri.swingstates.canvas.CShape#below(CElement)
 	 */
-	CElement above(CShape before);
+	CElement above(CElement before);
 	
 	/**
 	 * Calls <code>aboveAll()</code> for every CShape contained in this <code>CElement</code>.
@@ -411,12 +413,14 @@ public interface CElement {
 	CElement aboveAll();
 	
 	/**
-	 * Calls <code>below(CShape after)</code> for every CShape contained in this <code>CElement</code>.
-	 * @param after The shape that must be right above every shape contained in this <code>CElement</code> in the display list
-	 * @return This <code>CElement</code>
-	 * @see fr.lri.swingstates.canvas.CShape#below(CShape)
+	 * Changes the display list order so that every CShape contained in this CElement is right below 
+	 * the top least shape in another CElement. The relative display order between shapes contained in this CElement is unchanged.
+	 * <b>WARNING</b>: If this CElement also contains one of the elements contained in <code>after</code>, this method does nothing.
+	 * @param after The element that must be right above every shape contained in this <code>CElement</code> in the display list
+	 * @return This tag
+	 * @see fr.lri.swingstates.canvas.CShape#below(CElement)
 	 */
-	CElement below(CShape after);
+	CElement below(CElement after);
 	
 	/**
 	 * Calls <code>belowAll()</code> for every CShape contained in this <code>CElement</code>.

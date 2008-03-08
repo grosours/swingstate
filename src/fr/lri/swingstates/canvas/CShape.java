@@ -31,6 +31,8 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.RectangularShape;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import fr.lri.swingstates.animations.Animation;
@@ -238,8 +240,8 @@ public class CShape implements Cloneable, CElement {
 		}
 
 		// remove tags
-		LinkedList<CTag> canvasTags = canvas.allCanvasTags;
-		if (canvasTags != null) {
+		List<CTag> canvasTags = canvas.allCanvasTags;
+		synchronized(canvasTags) {
 			for (Iterator<CTag> i = canvasTags.iterator(); i.hasNext();) {
 				CTag next = i.next();
 				if (next instanceof CExtensionalTag) {
@@ -1649,41 +1651,57 @@ public class CShape implements Cloneable, CElement {
 	public boolean isAbove(CShape before) {
 		if (canvas == null)
 			return false;
-		boolean hasSeen = false;
-		for (Iterator<CShape> i = canvas.displayOrder.iterator(); i.hasNext();) {
-			CShape shape = i.next();
-			if (shape == before)
-				hasSeen = true;
-			else if (shape == this)
-				return hasSeen;
+		boolean hasSeenMe = false;
+		boolean res = false;
+		synchronized(canvas.displayOrder) {
+			for (Iterator<CShape> i = canvas.displayOrder.iterator(); i.hasNext();) {
+				CShape shape = i.next();
+				if (shape == before) {
+					res = !hasSeenMe;
+					break;
+				} else {
+					if (shape == this)
+						hasSeenMe = true;
+				}
+			}
 		}
-		return false;
+		return res;
 	}
 
 	/**
 	 * Moves this shape in the canvas's display list so that it is right above a
-	 * given shape in the display list.
+	 * the top most shape contained in a given CElement.
 	 * 
 	 * @param before
-	 *            The shape that must be right below this shape in the display
+	 *            The element that must be right below this shape in the display
 	 *            list
 	 * @return this shape.
 	 */
-	public CElement above(CShape before) {
+	public CElement above(CElement before) {
 		if (canvas == null)
 			return this;
-		canvas.displayOrder.remove(this);
-		int index = 0;
-		ConcurrentLinkedQueue<CShape> newDisplayList = new ConcurrentLinkedQueue<CShape>();
-		for (Iterator<CShape> i = canvas.displayOrder.iterator(); i.hasNext();) {
-			index++;
-			CShape next = i.next();
-			newDisplayList.add(next);
-			if (next.equals(before)) {
-				newDisplayList.add(this);
+		if(before instanceof Canvas) {
+			return aboveAll();
+		}
+		CShape foregroundShape = null;
+		if(before instanceof CShape) {
+			foregroundShape = (CShape)before;
+		}
+		else {
+			CTag beforeTag = (CTag)before;
+			List<CShape> displaylist = getCanvas().getDisplayList();
+			synchronized(displaylist) {
+				for (Iterator<CShape> iter = displaylist.iterator(); iter.hasNext();) {
+					CShape element = iter.next();
+					if(element.hasTag(beforeTag)) {
+						foregroundShape = element;
+					}
+				}
 			}
 		}
-		canvas.displayOrder = newDisplayList;
+		canvas.displayOrder.remove(this);
+		int index = canvas.displayOrder.indexOf(foregroundShape);
+		canvas.displayOrder.add(index+1, this);
 		repaint();
 		return this;
 	}
@@ -1716,39 +1734,59 @@ public class CShape implements Cloneable, CElement {
 		if (canvas == null)
 			return false;
 		boolean hasSeenMe = false;
-		for (Iterator<CShape> i = canvas.displayOrder.iterator(); i.hasNext();) {
-			CShape shape = i.next();
-			if (shape == after)
-				return hasSeenMe;
-			else if (shape == this)
-				hasSeenMe = true;
+		boolean res = false;
+		synchronized(canvas.displayOrder) {
+			for (Iterator<CShape> i = canvas.displayOrder.iterator(); i.hasNext();) {
+				CShape shape = i.next();
+				if (shape == after) {
+					res = hasSeenMe;
+					break;
+				} else {
+					if (shape == this) {
+						hasSeenMe = true;
+					}
+				}
+
+			}
 		}
-		return false;
+		return res;
 	}
 
 	/**
 	 * Moves this shape in the canvas's display list so that it is right below a
-	 * given shape in the display list.
+	 * the top least shape contained in a given CElement.
 	 * 
 	 * @param after
-	 *            The shape that must be right above this shape in the display
+	 *            The element that must be right above this shape in the display
 	 *            list
 	 * @return this shape.
 	 */
-	public CElement below(CShape after) {
+	public CElement below(CElement after) {
 		if (canvas == null)
 			return this;
-		canvas.displayOrder.remove(this);
-		ConcurrentLinkedQueue<CShape> newDisplayList = new ConcurrentLinkedQueue<CShape>();
-		int index = 0;
-		for (Iterator<CShape> i = canvas.displayOrder.iterator(); i.hasNext();) {
-			index++;
-			CShape next = i.next();
-			if (next.equals(after))
-				newDisplayList.add(this);
-			newDisplayList.add(next);
+		if(after instanceof Canvas) {
+			return belowAll();
 		}
-		canvas.displayOrder = newDisplayList;
+		CShape backgroundShape = null;
+		if(after instanceof CShape) {
+			backgroundShape = (CShape)after;
+		}
+		else {
+			CTag beforeTag = (CTag)after;
+			List<CShape> displaylist = getCanvas().getDisplayList();
+			synchronized(displaylist) {
+				for (Iterator<CShape> iter = displaylist.iterator(); iter.hasNext();) {
+					CShape element = iter.next();
+					if(element.hasTag(beforeTag)) {
+						backgroundShape = element;
+						break;
+					}
+				}
+			}
+		}
+		canvas.displayOrder.remove(this);
+		int index = canvas.displayOrder.indexOf(backgroundShape);
+		canvas.displayOrder.add(index, this);
 		repaint();
 		return this;
 
@@ -1764,15 +1802,7 @@ public class CShape implements Cloneable, CElement {
 		if (canvas == null)
 			return this;
 		canvas.displayOrder.remove(this);
-		ConcurrentLinkedQueue<CShape> newDisplayList = new ConcurrentLinkedQueue<CShape>();
-		newDisplayList.add(this);
-		int index = 0;
-		for (Iterator<CShape> i = canvas.displayOrder.iterator(); i.hasNext();) {
-			index++;
-			CShape next = i.next();
-			newDisplayList.add(next);
-		}
-		canvas.displayOrder = newDisplayList;
+		canvas.displayOrder.add(0, this);
 		repaint();
 		return this;
 	}

@@ -2,7 +2,7 @@
  *   Authors: Caroline Appert (caroline.appert@lri.fr)
  *   Copyright (c) Universite Paris-Sud XI, 2007. All Rights Reserved
  *   Licensed under the GNU LGPL. For full terms see the file COPYING.
-*/
+ */
 package fr.lri.swingstates.canvas;
 
 import java.awt.AlphaComposite;
@@ -32,12 +32,11 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -101,7 +100,7 @@ import fr.lri.swingstates.sm.transitions.Enter;
  * @author Caroline Appert
  */
 public class Canvas extends JPanel implements MouseListener,
-		MouseMotionListener, MouseWheelListener, KeyListener, CElement {
+MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 
 	private static final long serialVersionUID = 1L;
 
@@ -134,18 +133,18 @@ public class Canvas extends JPanel implements MouseListener,
 
 	protected Shape clip;
 
-	protected LinkedList<CStateMachine> stateMachines = new LinkedList<CStateMachine>();
-	protected ConcurrentLinkedQueue<CShape> displayOrder;
+	protected List<CStateMachine> stateMachines = null;
+	protected List<CShape> displayOrder;
 
-	protected LinkedList<CTag> allCanvasTags = null;
+	protected List<CTag> allCanvasTags = null;
 
 	/**
 	 * The active pickers on this <code>Canvas</code>.
 	 */
 	protected Vector<Picker> pickers = new Vector<Picker>();
-	
+
 	private boolean listenerAttached = false;
-	
+
 	/**
 	 * The last <code>CWidget</code> that has been picked by one of the active
 	 * pickers. So keyboard events are dispatched to this widget.
@@ -160,7 +159,7 @@ public class Canvas extends JPanel implements MouseListener,
 	/**
 	 * @return all the tags registered on this <code>Canvas</code>.
 	 */
-	public LinkedList<CTag> getAllTags() {
+	public List<CTag> getAllTags() {
 		return allCanvasTags;
 	}
 
@@ -169,8 +168,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public Canvas() {
 		super();
+		displayOrder = Collections.synchronizedList(new LinkedList<CShape>());
+		stateMachines = Collections.synchronizedList(new LinkedList<CStateMachine>());
+		allCanvasTags = Collections.synchronizedList(new LinkedList<CTag>());
 		addPicker(masterPicker);
-		displayOrder = new ConcurrentLinkedQueue<CShape>();
 		setBackground(Color.WHITE);
 		repaint();
 	}
@@ -184,12 +185,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 *            The height of the canvas
 	 */
 	public Canvas(int w, int h) {
-		super();
-		addPicker(masterPicker);
+		this();
 		setPreferredSize(new Dimension(w, h));
-		displayOrder = new ConcurrentLinkedQueue<CShape>();
-		setBackground(Color.WHITE);
-		repaint();
 	}
 
 	protected void addPicker(Picker picker) {
@@ -212,8 +209,6 @@ public class Canvas extends JPanel implements MouseListener,
 	 *            The tag to register
 	 */
 	void registerTag(CTag tag) {
-		if (allCanvasTags == null)
-			allCanvasTags = new LinkedList<CTag>();
 		if (!allCanvasTags.contains(tag))
 			allCanvasTags.add(tag);
 	}
@@ -226,15 +221,15 @@ public class Canvas extends JPanel implements MouseListener,
 	 * @return The tag, or null if no such tag exists.
 	 */
 	public CNamedTag getTag(String tag) {
-		if (allCanvasTags == null)
-			return null;
-		for (Iterator<CTag> i = allCanvasTags.iterator(); i.hasNext();) {
-			CTag next = i.next();
-			if (next instanceof CNamedTag)
-				if (((CNamedTag) next).getName().compareTo(tag) == 0) {
-					((CNamedTag) next).reset();
-					return (CNamedTag) next;
-				}
+		synchronized(allCanvasTags) {
+			for (Iterator<CTag> i = allCanvasTags.iterator(); i.hasNext();) {
+				CTag next = i.next();
+				if (next instanceof CNamedTag)
+					if (((CNamedTag) next).getName().compareTo(tag) == 0) {
+						((CNamedTag) next).reset();
+						return (CNamedTag) next;
+					}
+			}
 		}
 		return null;
 	}
@@ -283,30 +278,22 @@ public class Canvas extends JPanel implements MouseListener,
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		Graphics2D g2d = (Graphics2D) g;
-//		g.setColor(getBackground());
-//		if(isOpaque()) g.fillRect(0, 0, getWidth(), getHeight());
-//		else g.clearRect(0, 0, getWidth(), getHeight());
-
-//		if (renderingHints == null) {
-//			renderingHints = g2d.getRenderingHints();
-//		} else {
-//			renderingHints.add(g2d.getRenderingHints());
-//		}
 		transparency = (AlphaComposite) g2d.getComposite();
 		transform = g2d.getTransform();
 
 		if (renderingHints != null) g2d.addRenderingHints(renderingHints);
-//		g2d.setRenderingHints(renderingHints);
-		
+
 		if (clip != null)
 			g2d.setClip(clip);
 		else
 			g2d.setClip(g2d.getClip());
 
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = (CShape) (i.next());
-			if (sms.isDrawable() && sms.isVisible())
-				sms.paint(g);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = (CShape) (i.next());
+				if (sms.isDrawable() && sms.isVisible())
+					sms.paint(g);
+			}
 		}
 
 		// to process enter/leave events if needed
@@ -335,9 +322,8 @@ public class Canvas extends JPanel implements MouseListener,
 		VirtualEvent toProcess = new VirtualCanvasEvent(event, picked, pt);
 		toProcess.setSource(this);
 		CStateMachine machine;
-		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
-		synchronized(list) {
-			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+		synchronized(stateMachines) {
+			Iterator<CStateMachine> i = stateMachines.iterator(); // Must be in synchronized block
 			while (i.hasNext()) {
 				if (isConsumed)
 					break;
@@ -349,17 +335,6 @@ public class Canvas extends JPanel implements MouseListener,
 				isConsumed = machine.hasConsumed();
 			}
 		}
-		
-//		for (Iterator<CStateMachine> i = stateMachines.iterator(); i.hasNext();) {
-//			if (isConsumed)
-//				break;
-//			CStateMachine machine = i.next();
-//			machine.consumes(false);
-//			if (machine.getCurrentState() == null)
-//				continue;
-//			machine.processEvent(toProcess);
-//			isConsumed = machine.hasConsumed();
-//		}
 	}
 
 	/**
@@ -383,9 +358,8 @@ public class Canvas extends JPanel implements MouseListener,
 			}
 		}
 		CStateMachine machine;
-		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
-		synchronized(list) {
-			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+		synchronized(stateMachines) {
+			Iterator<CStateMachine> i = stateMachines.iterator(); 
 			while (i.hasNext()) {
 				if (isConsumed)
 					break;
@@ -397,16 +371,6 @@ public class Canvas extends JPanel implements MouseListener,
 				isConsumed = machine.hasConsumed();
 			}
 		}
-//		for (Iterator<CStateMachine> i = stateMachines.iterator(); i.hasNext();) {
-//			if (isConsumed)
-//				break;
-//			CStateMachine machine = i.next();
-//			machine.consumes(false);
-//			if (machine.getCurrentState() == null)
-//				continue;
-//			machine.processEvent(virtualEvent);
-//			isConsumed = machine.hasConsumed();
-//		}
 	}
 
 	/**
@@ -420,7 +384,7 @@ public class Canvas extends JPanel implements MouseListener,
 	 * @return true if <code>element</code> is a subset of
 	 *         <code>container</code>.
 	 */
-	private boolean contains(CElement container, CElement element) {
+	public static boolean contains(CElement container, CElement element) {
 		if (container instanceof Canvas) {
 			return element.getCanvas() == container;
 		} else {
@@ -455,9 +419,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public boolean isTracking(CElement element) {
 		CStateMachine machine;
-		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
-		synchronized(list) {
-			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+		synchronized(stateMachines) {
+			Iterator<CStateMachine> i = stateMachines.iterator(); 
 			while (i.hasNext()) {
 				machine = i.next();
 				machine.consumes(false);
@@ -472,7 +435,7 @@ public class Canvas extends JPanel implements MouseListener,
 						Transition nextTrans = j.next();
 						if (nextTrans instanceof CElementEvent) {
 							CElement elem = ((CElementEvent) nextTrans)
-									.getCElement();
+							.getCElement();
 							if (contains(elem, element))
 								return true;
 						}
@@ -481,30 +444,6 @@ public class Canvas extends JPanel implements MouseListener,
 			}
 		}
 		return false;
-		
-//		for (ListIterator<CStateMachine> i = stateMachines.listIterator(); i
-//				.hasNext();) {
-//			CStateMachine machine = i.next();
-//			machine.consumes(false);
-//			if (machine.isActive()) {
-//				// because animation can fire events before the machine is initialized
-//				if (machine.getCurrentState() == null) {
-//					machine.initStatesAndTransitions();
-//					continue;
-//				}
-//				for (Iterator<Transition> j = machine.getCurrentState()
-//						.getTransitions().iterator(); j.hasNext();) {
-//					Transition nextTrans = j.next();
-//					if (nextTrans instanceof CElementEvent) {
-//						CElement elem = ((CElementEvent) nextTrans)
-//								.getCElement();
-//						if (contains(elem, element))
-//							return true;
-//					}
-//				}
-//			}
-//		}
-//		return false;
 	}
 
 	/**
@@ -516,9 +455,8 @@ public class Canvas extends JPanel implements MouseListener,
 	private void processEvent(InputEvent e) {
 		CStateMachine machine;
 		boolean isConsumed = false;
-		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
-		synchronized(list) {
-			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+		synchronized(stateMachines) {
+			Iterator<CStateMachine> i = stateMachines.iterator(); // Must be in synchronized block
 			while (i.hasNext()) {
 				machine = i.next();
 				if (isConsumed)
@@ -530,22 +468,6 @@ public class Canvas extends JPanel implements MouseListener,
 				}
 			}
 		}
-		
-		
-//		boolean isConsumed = false;
-//		
-//		for (ListIterator<CStateMachine> i = stateMachines.listIterator(); i
-//				.hasNext();) {
-//			if (isConsumed)
-//				break;
-//			CStateMachine machine = i.next();
-//			machine.consumes(false);
-//			if (machine.isActive()) {
-//				machine.processEvent(e);
-//				isConsumed = machine.hasConsumed();
-//			}
-//		}
-
 	}
 
 	/**
@@ -631,9 +553,8 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	protected boolean hasTransitionOfClass(Class cl) {
 		CStateMachine machine;
-		Collection<CStateMachine> list = Collections.synchronizedList(stateMachines);
-		synchronized(list) {
-			Iterator<CStateMachine> i = list.iterator(); // Must be in synchronized block
+		synchronized(stateMachines) {
+			Iterator<CStateMachine> i = stateMachines.iterator(); // Must be in synchronized block
 			while (i.hasNext()) {
 				machine = i.next();
 				if (machine.isActive()) {
@@ -645,17 +566,6 @@ public class Canvas extends JPanel implements MouseListener,
 			}
 		}
 		return false;
-		
-//		for (Iterator<CStateMachine> i = stateMachines.iterator(); i.hasNext();) {
-//			CStateMachine machine = (CStateMachine) i.next();
-//			if (machine.isActive()) {
-//				if (machine.getCurrentState() == null)
-//					continue;
-//				if (machine.hasTransitionOfClass(cl))
-//					return true;
-//			}
-//		}
-//		return false;
 	}
 
 	// events incoming from java.awt (MouseEvent)
@@ -736,8 +646,8 @@ public class Canvas extends JPanel implements MouseListener,
 			if (previousPicked != null) {
 				dispatchEvent(new PickerCEvent(this, previousPicked,
 						movedPicker, MouseEvent.MOUSE_EXITED, time, 0, (int) movedPicker
-								.getLocation().getX(), (int) movedPicker
-								.getLocation().getY(), 0, false));
+						.getLocation().getX(), (int) movedPicker
+						.getLocation().getY(), 0, false));
 			}
 			if (newPicked != null) {
 				dispatchEvent(new PickerCEvent(this, newPicked, movedPicker,
@@ -769,30 +679,30 @@ public class Canvas extends JPanel implements MouseListener,
 			PickerCEvent eventToDispatch = initialEvent.getID() == MouseEvent.MOUSE_WHEEL ? new PickerCEvent(
 					(Component) initialEvent.getSource(), picked, eventPicker,
 					initialEvent.getID(), initialEvent.getWhen(), initialEvent
-							.getModifiers(), (int) initialEvent.getPoint()
-							.getX(), (int) initialEvent.getPoint().getY(),
+					.getModifiers(), (int) initialEvent.getPoint()
+					.getX(), (int) initialEvent.getPoint().getY(),
 					initialEvent.getClickCount(),
 					initialEvent.isPopupTrigger(),
 					((MouseWheelEvent) initialEvent).getScrollType(),
 					((MouseWheelEvent) initialEvent).getScrollAmount(),
 					((MouseWheelEvent) initialEvent).getWheelRotation())
-					: new PickerCEvent((Component) initialEvent.getSource(),
-							picked, eventPicker, initialEvent.getID(),
-							initialEvent.getWhen(),
-							initialEvent.getModifiers(), (int) initialEvent
-									.getPoint().getX(), (int) initialEvent
-									.getPoint().getY(), initialEvent
-									.getClickCount(), initialEvent
-									.isPopupTrigger());
-			processEvent(eventToDispatch);
+			: new PickerCEvent((Component) initialEvent.getSource(),
+					picked, eventPicker, initialEvent.getID(),
+					initialEvent.getWhen(),
+					initialEvent.getModifiers(), (int) initialEvent
+					.getPoint().getX(), (int) initialEvent
+					.getPoint().getY(), initialEvent
+					.getClickCount(), initialEvent
+					.isPopupTrigger());
+					processEvent(eventToDispatch);
 
-			if (picked instanceof CWidget) {
-				widgetFocused = (CWidget) picked;
-				if (widgetFocused.isBasicListener()) {
-					widgetFocused.sendEvent(eventPicker.getLocation(),
-							initialEvent);
-				}
-			}
+					if (picked instanceof CWidget) {
+						widgetFocused = (CWidget) picked;
+						if (widgetFocused.isBasicListener()) {
+							widgetFocused.sendEvent(eventPicker.getLocation(),
+									initialEvent);
+						}
+					}
 		} else
 			processEvent(initialEvent);
 	}
@@ -834,13 +744,13 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape pick(Point2D p) {
 		CShape picked = null;
-		if (displayOrder == null)
-			return null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.isPickable())
-				if (sms.pick(p, 2) != null)
-					picked = sms;
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.isPickable())
+					if (sms.pick(p, 2) != null)
+						picked = sms;
+			}
 		}
 		return picked;
 	}
@@ -854,11 +764,13 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public LinkedList<CShape> pickAll(Point2D p) {
 		LinkedList<CShape> pickedShapes = new LinkedList<CShape>();
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = (CShape) (i.next());
-			if (sms.isPickable())
-				if (sms.pick(p, 2) != null)
-					pickedShapes.addFirst(sms);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = (CShape) (i.next());
+				if (sms.isPickable())
+					if (sms.pick(p, 2) != null)
+						pickedShapes.addFirst(sms);
+			}
 		}
 		return pickedShapes;
 	}
@@ -875,12 +787,14 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape pickShapeHavingTag(Point2D p, CTag tag) {
 		CShape picked = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.isPickable())
-				if (sms.pick(p, 2) != null)
-					if (sms.hasTag(tag))
-						picked = sms;
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.isPickable())
+					if (sms.pick(p, 2) != null)
+						if (sms.hasTag(tag))
+							picked = sms;
+			}
 		}
 		return picked;
 	}
@@ -1376,7 +1290,7 @@ public class Canvas extends JPanel implements MouseListener,
 	 * 
 	 * @return the state machines attached to this canvas.
 	 */
-	public LinkedList<CStateMachine> getSMs() {
+	public List<CStateMachine> getSMs() {
 		return stateMachines;
 	}
 
@@ -1479,8 +1393,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setShape(Shape sh) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setShape(sh);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setShape(sh);
+		}
 		return this;
 	}
 
@@ -1488,8 +1404,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setParent(CShape parent) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setParent(parent);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setParent(parent);
+		}
 		return this;
 	}
 
@@ -1497,8 +1415,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setStroke(Stroke str) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setStroke(str);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setStroke(str);
+		}
 		return this;
 	}
 
@@ -1506,8 +1426,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransparencyFill(AlphaComposite transparencyFill) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setTransparencyFill(transparencyFill);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setTransparencyFill(transparencyFill);
+		}
 		return this;
 	}
 
@@ -1515,8 +1437,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransparencyFill(float alpha) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setTransparencyFill(alpha);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setTransparencyFill(alpha);
+		}
 		return this;
 	}
 
@@ -1524,8 +1448,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransparencyOutline(AlphaComposite transparencyOutline) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setTransparencyOutline(transparencyOutline);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setTransparencyOutline(transparencyOutline);
+		}
 		return this;
 	}
 
@@ -1533,8 +1459,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransparencyOutline(float alpha) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setTransparencyOutline(alpha);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setTransparencyOutline(alpha);
+		}
 		return this;
 	}
 
@@ -1542,8 +1470,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setFillPaint(Paint fp) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setFillPaint(fp);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setFillPaint(fp);
+		}
 		return this;
 	}
 
@@ -1551,8 +1481,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setOutlinePaint(Paint op) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setOutlinePaint(op);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setOutlinePaint(op);
+		}
 		return this;
 	}
 
@@ -1562,10 +1494,12 @@ public class Canvas extends JPanel implements MouseListener,
 	public LinkedList<CShape> getAntialiasedShapes() {
 		LinkedList<CShape> res = new LinkedList<CShape>();
 		CShape s;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			s = i.next();
-			if (s.isAntialiased())
-				res.add(s);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				s = i.next();
+				if (s.isAntialiased())
+					res.add(s);
+			}
 		}
 		return res;
 	}
@@ -1574,10 +1508,14 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public boolean isFilled() {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			if (!i.next().isFilled())
-				return false;
-		return true;
+		boolean res = true;
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				if (!i.next().isFilled()) {
+					res = false; break; 
+				}
+		}
+		return res;
 	}
 
 	/**
@@ -1586,10 +1524,12 @@ public class Canvas extends JPanel implements MouseListener,
 	public LinkedList<CShape> getFilledShapes() {
 		LinkedList<CShape> res = new LinkedList<CShape>();
 		CShape s;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			s = i.next();
-			if (s.isFilled())
-				res.add(s);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				s = i.next();
+				if (s.isFilled())
+					res.add(s);
+			}
 		}
 		return res;
 	}
@@ -1598,8 +1538,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setFilled(boolean f) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setFilled(f);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setFilled(f);
+		}
 		return this;
 	}
 
@@ -1607,10 +1549,14 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public boolean isOutlined() {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			if (!i.next().isOutlined())
-				return false;
-		return true;
+		boolean res = true;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				if (!i.next().isOutlined()) {
+					res = false; break;
+				}
+		}
+		return res;
 	}
 
 	/**
@@ -1619,10 +1565,12 @@ public class Canvas extends JPanel implements MouseListener,
 	public LinkedList<CShape> getOutlinedShapes() {
 		LinkedList<CShape> res = new LinkedList<CShape>();
 		CShape s;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			s = i.next();
-			if (s.isOutlined())
-				res.add(s);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				s = i.next();
+				if (s.isOutlined())
+					res.add(s);
+			}
 		}
 		return res;
 	}
@@ -1631,8 +1579,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setOutlined(boolean f) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setFilled(f);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setFilled(f);
+		}
 		return this;
 	}
 
@@ -1640,9 +1590,11 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public boolean isDrawable() {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			if (!i.next().isDrawable())
-				return false;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				if (!i.next().isDrawable())
+					return false;
+		}
 		return true;
 	}
 
@@ -1650,8 +1602,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setDrawable(boolean f) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setFilled(f);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setFilled(f);
+		}
 		return this;
 	}
 
@@ -1659,18 +1613,24 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public boolean isPickable() {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			if (!i.next().isPickable())
-				return false;
-		return true;
+		boolean res = true;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				if (!i.next().isPickable()) {
+					res = false; break;
+				}
+		}
+		return res;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	public CElement setPickable(boolean pick) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setPickable(pick);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setPickable(pick);
+		}
 		return this;
 	}
 
@@ -1678,8 +1638,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setReferencePoint(double x, double y) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setReferencePoint(x, y);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setReferencePoint(x, y);
+		}
 		return this;
 	}
 
@@ -1687,8 +1649,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement setTransformToIdentity() {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().setTransformToIdentity();
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().setTransformToIdentity();
+		}
 		return this;
 	}
 
@@ -1696,8 +1660,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement translateBy(double tx, double ty) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().translateBy(tx, ty);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().translateBy(tx, ty);
+		}
 		return this;
 	}
 
@@ -1705,8 +1671,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement translateTo(double tx, double ty) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().translateTo(tx, ty);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().translateTo(tx, ty);
+		}
 		return this;
 	}
 
@@ -1714,8 +1682,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement scaleBy(double sx, double sy) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().scaleBy(sx, sy);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().scaleBy(sx, sy);
+		}
 		return this;
 	}
 
@@ -1723,8 +1693,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement scaleBy(double s) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().scaleBy(s);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().scaleBy(s);
+		}
 		return this;
 	}
 
@@ -1732,8 +1704,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement scaleTo(double sx, double sy) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().scaleTo(sx, sy);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().scaleTo(sx, sy);
+		}
 		return this;
 	}
 
@@ -1741,8 +1715,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement scaleTo(double s) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().scaleTo(s);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().scaleTo(s);
+		}
 		return this;
 	}
 
@@ -1750,8 +1726,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement rotateBy(double theta) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().rotateTo(theta);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().rotateTo(theta);
+		}
 		return this;
 	}
 
@@ -1759,8 +1737,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement rotateTo(double theta) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().rotateTo(theta);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().rotateTo(theta);
+		}
 		return this;
 	}
 
@@ -1783,11 +1763,13 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape contains(double x, double y, double w, double h) {
 		CShape res = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.isPickable())
-				if (sms.contains(x, y, w, h) != null)
-					res = sms;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.isPickable())
+					if (sms.contains(x, y, w, h) != null)
+						res = sms;
+			}
 		}
 		return res;
 	}
@@ -1797,11 +1779,13 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape contains(Rectangle r) {
 		CShape res = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.isPickable())
-				if (sms.contains(r) != null)
-					res = sms;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.isPickable())
+					if (sms.contains(r) != null)
+						res = sms;
+			}
 		}
 		return res;
 	}
@@ -1811,11 +1795,13 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape isOnOutline(Point2D p) {
 		CShape res = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.isPickable())
-				if (sms.isOnOutline(p) != null)
-					res = sms;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.isPickable())
+					if (sms.isOnOutline(p) != null)
+						res = sms;
+			}
 		}
 		return res;
 	}
@@ -1825,11 +1811,13 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape intersects(CShape s) {
 		CShape res = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.isPickable())
-				if (sms.intersects(s) != null)
-					res = sms;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.isPickable())
+					if (sms.intersects(s) != null)
+						res = sms;
+			}
 		}
 		return res;
 	}
@@ -1848,13 +1836,15 @@ public class Canvas extends JPanel implements MouseListener,
 		Area areaS = new Area(s.getAbsShape());
 		Area areaSms = null;
 		Area res = new Area();
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.isPickable()) {
-				areaSms = new Area(sms.getAbsShape());
-				areaSms.intersect(areaS);
-				if (!areaSms.isEmpty()) {
-					res.add(areaSms);
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.isPickable()) {
+					areaSms = new Area(sms.getAbsShape());
+					areaSms.intersect(areaS);
+					if (!areaSms.isEmpty()) {
+						res.add(areaSms);
+					}
 				}
 			}
 		}
@@ -1872,10 +1862,13 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape getFirstHavingTag(CTag t) {
 		CShape res = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.hasTag(t))
-				res = sms;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.hasTag(t)) {
+					res = sms;
+				}
+			}
 		}
 		return res;
 	}
@@ -1886,10 +1879,14 @@ public class Canvas extends JPanel implements MouseListener,
 	public boolean hasTag(String t) {
 		if (t == null)
 			return true;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			if (!(i.next().hasTag(t)))
-				return false;
-		return true;
+		boolean res = true;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				if (!(i.next().hasTag(t))) {
+					res = false; break;
+				}
+		}
+		return res;
 	}
 
 	/**
@@ -1898,16 +1895,20 @@ public class Canvas extends JPanel implements MouseListener,
 	public boolean hasTag(CTag t) {
 		if (t == null)
 			return true;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			if (!(i.next().hasTag(t)))
-				return false;
-		return true;
+		boolean res = true;
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				if (!(i.next().hasTag(t))) {
+					res = false; break;
+				}
+		}
+		return res;
 	}
 
 	/**
 	 * Does Anything. {@inheritDoc}
 	 */
-	public CElement above(CShape before) {
+	public CElement above(CElement before) {
 		return this;
 	}
 
@@ -1921,7 +1922,7 @@ public class Canvas extends JPanel implements MouseListener,
 	/**
 	 * Does Anything. {@inheritDoc}
 	 */
-	public CElement below(CShape after) {
+	public CElement below(CElement after) {
 		return this;
 	}
 
@@ -1951,7 +1952,15 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public void addGhost() {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+		List<CShape> displayOrderCopy = new LinkedList<CShape>();
+		// To avoid deadlock (addGhost in class CShape calls 
+		// addShape in class Canvas which has to access safely to the display list
+		synchronized(displayOrder) {
+			for (Iterator<CShape> iter = displayOrder.iterator(); iter.hasNext();) {
+				displayOrderCopy.add(iter.next());
+			}
+		}
+		for (Iterator<CShape> i = displayOrderCopy.iterator(); i.hasNext();)
 			i.next().addGhost();
 	}
 
@@ -1959,7 +1968,13 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public void removeGhost() {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+		List<CShape> displayOrderCopy = new LinkedList<CShape>();
+		synchronized(displayOrder) {
+			for (Iterator<CShape> iter = displayOrder.iterator(); iter.hasNext();) {
+				displayOrderCopy.add(iter.next());
+			}
+		}
+		for (Iterator<CShape> i = displayOrderCopy.iterator(); i.hasNext();)
 			i.next().removeGhost();
 	}
 
@@ -2030,7 +2045,7 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape firstShape() {
 		if (displayOrder.size() > 1)
-			return displayOrder.peek();
+			return displayOrder.get(0);
 		return null;
 	}
 
@@ -2039,10 +2054,12 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape getFirstAntialiasedShape() {
 		CShape res = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.isAntialiased())
-				res = sms;
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.isAntialiased())
+					res = sms;
+			}
 		}
 		return res;
 	}
@@ -2052,10 +2069,12 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape getFirstFilledShape() {
 		CShape res = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.filled)
-				res = sms;
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.filled)
+					res = sms;
+			}
 		}
 		return res;
 	}
@@ -2065,10 +2084,12 @@ public class Canvas extends JPanel implements MouseListener,
 	 */
 	public CShape getFirstOutlinedShape() {
 		CShape res = null;
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-			CShape sms = i.next();
-			if (sms.outlined)
-				res = sms;
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape sms = i.next();
+				if (sms.outlined)
+					res = sms;
+			}
 		}
 		return res;
 	}
@@ -2077,8 +2098,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement addTag(CExtensionalTag t) {
-		for (Iterator<CShape>i = displayOrder.iterator(); i.hasNext();)
-			i.next().addTag(t);
+		synchronized(displayOrder) {
+			for (Iterator<CShape>i = displayOrder.iterator(); i.hasNext();)
+				i.next().addTag(t);
+		}
 		return this;
 	}
 
@@ -2086,8 +2109,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement addTag(String t) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().addTag(t);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().addTag(t);
+		}
 		return this;
 	}
 
@@ -2095,8 +2120,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement removeTag(CExtensionalTag t) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().removeTag(t);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().removeTag(t);
+		}
 		return this;
 	}
 
@@ -2104,8 +2131,10 @@ public class Canvas extends JPanel implements MouseListener,
 	 * {@inheritDoc}
 	 */
 	public CElement removeTag(String t) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().removeTag(t);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().removeTag(t);
+		}
 		return this;
 	}
 
@@ -2120,24 +2149,24 @@ public class Canvas extends JPanel implements MouseListener,
 	 * @see fr.lri.swingstates.canvas.CShape#animate(Animation)
 	 */
 	public CElement animate(Animation anim) {
-		for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-			i.next().animate(anim);
+		synchronized(displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().animate(anim);
+		}
 		return this;
 	}
 
 	/**
 	 * @return The display list of this canvas.
 	 */
-	public ConcurrentLinkedQueue<CShape> getDisplayList() {
+	public List<CShape> getDisplayList() {
 		return displayOrder;
 	}
 
 	protected void registerMachine(CStateMachine machine) {
-		synchronized(stateMachines) {
-			if (!stateMachines.contains(machine)) {
-				stateMachines.add(machine);
-				// machine.addStateMachineListener(updatePicker);
-			}
+		if (!stateMachines.contains(machine)) {
+			stateMachines.add(machine);
+			// machine.addStateMachineListener(updatePicker);
 		}
 	}
 

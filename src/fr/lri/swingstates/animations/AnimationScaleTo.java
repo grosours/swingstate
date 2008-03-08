@@ -6,6 +6,7 @@
 package fr.lri.swingstates.animations;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import fr.lri.swingstates.canvas.CElement;
@@ -61,17 +62,19 @@ public class AnimationScaleTo extends Animation {
 	 */
 	public Animation setAnimatedElement(CElement ce) {
 		if(Canvas.class.isAssignableFrom(ce.getClass())) {
-			ConcurrentLinkedQueue<CShape> l = ((Canvas)ce).getDisplayList();
+			List<CShape> l = ((Canvas)ce).getDisplayList();
 			int nb = l.size();
 			animatedShapes = new CShape[nb];
 			scales = new double[nb][2];
 			int cpt = 0;
-			for(Iterator i = l.iterator(); i.hasNext();) {
-				CShape next = (CShape) i.next();
-				animatedShapes[cpt] = next;
-				scales[cpt][0] = next.getScaleX();
-				scales[cpt][1] = next.getScaleY();
-				cpt++;
+			synchronized(l) {
+				for(Iterator i = l.iterator(); i.hasNext();) {
+					CShape next = (CShape) i.next();
+					animatedShapes[cpt] = next;
+					scales[cpt][0] = next.getScaleX();
+					scales[cpt][1] = next.getScaleY();
+					cpt++;
+				}
 			}
 		} else {
 			if(CTag.class.isAssignableFrom(ce.getClass())) {

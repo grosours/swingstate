@@ -8,6 +8,7 @@ package fr.lri.swingstates.animations;
 import java.awt.Color;
 import java.awt.Paint;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import fr.lri.swingstates.canvas.CElement;
@@ -45,22 +46,24 @@ abstract class AnimationPaint extends Animation {
 	 */
 	public Animation setAnimatedElement(CElement ce) {
 		if(Canvas.class.isAssignableFrom(ce.getClass())) {
-			ConcurrentLinkedQueue<CShape> l = ((Canvas)ce).getDisplayList();
+			List<CShape> l = ((Canvas)ce).getDisplayList();
 			int nb = l.size();
 			animatedShapes = new CShape[nb];
 			initialColors = new Color[nb];
 			int cpt = 0;
 			Paint paint;
-			for(Iterator i = l.iterator(); i.hasNext();) {
-				CShape next = (CShape) i.next();
-				animatedShapes[cpt] = next;
-				paint = getColorValue(next);
-				if(!(paint instanceof Color)) {
-					System.err.println(ERROR_ONLY_COLOR);
-				} else {
-					initialColors[cpt] = (Color)paint;
+			synchronized(l) {
+				for(Iterator i = l.iterator(); i.hasNext();) {
+					CShape next = (CShape) i.next();
+					animatedShapes[cpt] = next;
+					paint = getColorValue(next);
+					if(!(paint instanceof Color)) {
+						System.err.println(ERROR_ONLY_COLOR);
+					} else {
+						initialColors[cpt] = (Color)paint;
+					}
+					cpt++;
 				}
-				cpt++;
 			}
 		} else {
 			if(CTag.class.isAssignableFrom(ce.getClass())) {

@@ -241,7 +241,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		if (source != null) {
 			for (ListIterator<CElement> i = controlledObjects.listIterator(); i.hasNext();) {
 				CElement next = i.next();
-				if (((next instanceof Canvas) && (source.getCanvas() == next)) || ((next instanceof CTag) && (source.hasTag((CTag) next))) || ((next instanceof CShape) && (source == next))) {
+				if (((next instanceof Canvas) && (source.getCanvas() == next)) || ((next instanceof CShape) && (source == next)) || ((next instanceof CTag) && (source.hasTag((CTag) next)))) {
 					isSourceControlled = true;
 					break;
 				}
@@ -331,7 +331,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 	public CStateMachine greatestPriority(Canvas canvas) {
 		synchronized(canvas.stateMachines) {
 			if (canvas.stateMachines.remove(this))
-				canvas.stateMachines.addFirst(this);
+				canvas.stateMachines.add(0, this);
 		}
 		return this;
 	}

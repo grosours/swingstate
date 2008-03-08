@@ -6,7 +6,7 @@
 package fr.lri.swingstates.animations;
 
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.List;
 
 import fr.lri.swingstates.canvas.CElement;
 import fr.lri.swingstates.canvas.CShape;
@@ -60,17 +60,19 @@ public class AnimationTranslateTo extends Animation {
 	 */
 	public Animation setAnimatedElement(CElement ce) {
 		if(Canvas.class.isAssignableFrom(ce.getClass())) {
-			ConcurrentLinkedQueue<CShape> l = ((Canvas)ce).getDisplayList();
+			List<CShape> l = ((Canvas)ce).getDisplayList();
 			int nb = l.size();
 			animatedShapes = new CShape[nb];
 			initialTranslations = new double[nb][2];
 			int cpt = 0;
-			for(Iterator i = l.iterator(); i.hasNext();) {
-				CShape next = (CShape) i.next();
-				animatedShapes[cpt] = next;
-				initialTranslations[cpt][0] = next.getCenterX();
-				initialTranslations[cpt][1] = next.getCenterY();
-				cpt++;
+			synchronized(l) {
+				for(Iterator i = l.iterator(); i.hasNext();) {
+					CShape next = (CShape) i.next();
+					animatedShapes[cpt] = next;
+					initialTranslations[cpt][0] = next.getCenterX();
+					initialTranslations[cpt][1] = next.getCenterY();
+					cpt++;
+				}
 			}
 		} else {
 			if(CTag.class.isAssignableFrom(ce.getClass())) {

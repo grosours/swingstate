@@ -16,7 +16,14 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import javax.swing.text.StyledEditorKit.ForegroundAction;
+
+import com.sun.tools.javac.tree.Tree.TopLevel;
 
 import fr.lri.swingstates.animations.Animation;
 import fr.lri.swingstates.sm.Tag;
@@ -737,12 +744,41 @@ public abstract class CTag extends Tag implements CElement {
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Changes the display list order so that every CShape tagged by this tag is right above 
+	 * the top most shape in another CElement. The relative display order between shapes tagged by this tag is unchanged.
+	 * <b>WARNING</b>: If this tag also tags one of the elements contained in <code>before</code>, this method does nothing.
+	 * @param before The shape that must be right below every shape contained in this <code>CElement</code> in the display list
+	 * @return This <code>CElement</code>
+	 * @see fr.lri.swingstates.canvas.CShape#below(CElement)
 	 */
-	public CElement above(CShape before){ 
-		reset(); 
-		while(hasNext()) 
-			(nextShape()).above(before);
+	public CElement above(CElement before){ 
+		if(before instanceof Canvas) {
+			return aboveAll();
+		}
+		Vector<CShape> tagged = new Vector<CShape>();
+		List<CShape> displaylist = getCanvas().getDisplayList();
+		synchronized(displaylist) {
+			for (Iterator<CShape> iter = displaylist.iterator(); iter.hasNext();) {
+				CShape element = iter.next();
+				if(element.hasTag(this)) {
+					tagged.add(element);
+				}
+			}
+		}
+		CShape foregroundShape = null;
+		if(before instanceof CShape) {
+			foregroundShape = (CShape)before;
+			if(foregroundShape.hasTag(this)) return this;
+		}
+		else {
+			CTag beforeTag = (CTag)before;
+			foregroundShape = beforeTag.getTopMostShape();
+		}
+		for (Iterator<CShape> iter = tagged.iterator(); iter.hasNext();) {
+			CShape element = iter.next();
+			element.above(foregroundShape);
+			foregroundShape = element;
+		}
 		return this;
 	}
 	
@@ -750,19 +786,99 @@ public abstract class CTag extends Tag implements CElement {
 	 * {@inheritDoc}
 	 */
 	public CElement aboveAll(){ 
-		reset(); 
-		while(hasNext()) 
-			(nextShape()).aboveAll();
+		Vector<CShape> tagged = new Vector<CShape>();
+		List<CShape> displaylist = getCanvas().getDisplayList();
+		synchronized(displaylist) {
+			for (Iterator<CShape> iter = displaylist.iterator(); iter.hasNext();) {
+				CShape element = iter.next();
+				if(element.hasTag(this)) {
+					tagged.add(element);
+				}
+			}
+		}
+		for (Iterator<CShape> iter = tagged.iterator(); iter.hasNext();) {
+			CShape element = iter.next();
+			element.aboveAll();
+		}
 		return this;
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * @return 
+	 * 		The shape tagged by this tag that has the highest index in the display list,
+	 * 		null if this tag is not registered to a canvas.
 	 */
-	public CElement below(CShape after){ 
-		reset(); 
-		while(hasNext()) 
-			(nextShape()).below(after);
+	public CShape getTopMostShape() {
+		if(getCanvas() == null) return null; 
+		List<CShape> displaylist = getCanvas().getDisplayList();
+		CShape topMost = null;
+		synchronized(displaylist) {
+			for (Iterator<CShape> iter = displaylist.iterator(); iter.hasNext();) {
+				CShape element = iter.next();
+				if(element.hasTag(this)) {
+					topMost = element;
+				}
+			}
+		}
+		return topMost;
+	}
+	
+	/**
+	 * @return 
+	 * 		The shape tagged by this tag that has the lowest index in the display list,
+	 * 		null if this tag is not registered to a canvas.
+	 */
+	public CShape getTopLeastShape() {
+		if(getCanvas() == null) return null; 
+		List<CShape> displaylist = getCanvas().getDisplayList();
+		CShape topMost = null;
+		synchronized(displaylist) {
+			for (Iterator<CShape> iter = displaylist.iterator(); iter.hasNext();) {
+				CShape element = iter.next();
+				if(element.hasTag(this)) {
+					topMost = element;
+					break;
+				}
+			}
+		}
+		return topMost;
+	}
+	
+	/**
+	 * Changes the display list order so that every CShape tagged by this tag is right below 
+	 * the top least shape in another CElement. The relative display order between shapes tagged by this tag is unchanged.
+	 * <b>WARNING</b>: If this tag also tags one of the elements contained in <code>after</code>, this method does nothing.
+	 * @param after The shape that must be right above every shape contained in this <code>CElement</code> in the display list
+	 * @return This tag
+	 * @see fr.lri.swingstates.canvas.CShape#below(CElement)
+	 */
+	public CElement below(CElement after){ 
+		if(after instanceof Canvas) {
+			return belowAll();
+		}
+		Vector<CShape> tagged = new Vector<CShape>();
+		List<CShape> displaylist = getCanvas().getDisplayList();
+		synchronized(displaylist) {
+			for (Iterator<CShape> iter = displaylist.iterator(); iter.hasNext();) {
+				CShape element = iter.next();
+				if(element.hasTag(this)) {
+					tagged.add(element);
+				}
+			}
+		}
+		CShape backgroundShape = null;
+		if(after instanceof CShape) {
+			backgroundShape = (CShape)after;
+			if(backgroundShape.hasTag(this)) return this;
+		}
+		else {
+			CTag beforeTag = (CTag)after;
+			backgroundShape = beforeTag.getTopLeastShape();
+		}
+		for (Iterator<CShape> iter = tagged.iterator(); iter.hasNext();) {
+			CShape next = iter.next();
+			next.below(backgroundShape);
+		}
 		return this;
 	}
 	
@@ -770,9 +886,17 @@ public abstract class CTag extends Tag implements CElement {
 	 * {@inheritDoc}
 	 */
 	public CElement belowAll(){ 
-		LinkedList<Object> taggedShapes = (LinkedList<Object>)getCollection();
-		for(ListIterator i = taggedShapes.listIterator(taggedShapes.size()); i.hasPrevious();) {
-			((CShape)(i.previous())).belowAll();
+		Vector<CShape> tagged = new Vector<CShape>();
+		List<CShape> displaylist = getCanvas().getDisplayList();
+		for (Iterator<CShape> iter = displaylist.iterator(); iter.hasNext();) {
+			CShape element = iter.next();
+			if(element.hasTag(this)) {
+				tagged.add(element);
+			}
+		}
+		for (int i = (tagged.size() - 1); i >= 0; i--) {
+			CShape element = tagged.get(i);
+			element.belowAll();
 		}
 	    return this;
 	}

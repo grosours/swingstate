@@ -6,6 +6,7 @@
 package fr.lri.swingstates.animations;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import fr.lri.swingstates.canvas.CElement;
@@ -57,16 +58,18 @@ public class AnimationRotateTo extends Animation {
 	 */
 	public Animation setAnimatedElement(CElement ce) {
 		if(Canvas.class.isAssignableFrom(ce.getClass())) {
-			ConcurrentLinkedQueue<CShape> l = ((Canvas)ce).getDisplayList();
+			List<CShape> l = ((Canvas)ce).getDisplayList();
 			int nb = l.size();
 			animatedShapes = new CShape[nb];
 			initialRotations = new double[nb];
 			int cpt = 0;
-			for(Iterator i = l.iterator(); i.hasNext();) {
-				CShape next = (CShape) i.next();
-				animatedShapes[cpt] = next;
-				initialRotations[cpt] = next.getRotation();
-				cpt++;
+			synchronized(l) {
+				for(Iterator i = l.iterator(); i.hasNext();) {
+					CShape next = (CShape) i.next();
+					animatedShapes[cpt] = next;
+					initialRotations[cpt] = next.getRotation();
+					cpt++;
+				}
 			}
 		} else {
 			if(CTag.class.isAssignableFrom(ce.getClass())) {

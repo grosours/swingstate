@@ -64,9 +64,11 @@ public abstract class CIntentionalTag extends CTag {
 	 */
 	public final void reset() {
 		collection = new LinkedList<Object>();
-		for(Iterator i = canvas.getDisplayList().iterator(); i.hasNext(); ) {
-			CShape next = (CShape)i.next();
-			if(criterion(next)) collection.add(next);
+		synchronized(canvas.getDisplayList()) {
+			for(Iterator i = canvas.getDisplayList().iterator(); i.hasNext(); ) {
+				CShape next = (CShape)i.next();
+				if(criterion(next)) collection.add(next);
+			}
 		}
 		iterator = collection.iterator();
 	}
