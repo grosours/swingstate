@@ -131,10 +131,10 @@ public class GestureUtils {
 			maxY = Math.max(maxY, next.getY());
 		}
 		double w = maxX - minX;
-		if (w == 0)
+		if (w < 1)
 			w = 1;
 		double h = maxY - minY;
-		if (h == 0)
+		if (h < 1)
 			h = 1;
 		return new Rectangle2D.Double(minX, maxX, w, h);
 	}

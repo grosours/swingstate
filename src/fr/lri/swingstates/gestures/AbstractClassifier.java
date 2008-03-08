@@ -182,7 +182,7 @@ public abstract class AbstractClassifier {
 	}
 	
 	/**
-	 * {@inheritDoc}
+	 * @return The list of gesture class names in this classifier.
 	 */
 	public ArrayList<String> getClassesNames() {
 		return classesNames;

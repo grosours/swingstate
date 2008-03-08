@@ -1,3 +1,8 @@
+/*  
+ *   Authors: Caroline Appert (caroline.appert@lri.fr)
+ *   Copyright (c) Universite Paris-Sud XI, 2007. All Rights Reserved
+ *   Licensed under the GNU LGPL. For full terms see the file COPYING.
+*/
 package fr.lri.swingstates.gestures.shapeMatching;
 
 import java.awt.geom.Point2D;
@@ -19,28 +24,19 @@ import fr.lri.swingstates.gestures.Gesture;
 import fr.lri.swingstates.gestures.GestureUtils;
 import fr.lri.swingstates.gestures.Score;
 
+/**
+ * A very simple recognizer that performs simple shape matching:
+ * <ol>
+ * <li> Resample the gesture to classify so it contains the number of uniformly spaced points as the gesture examples contained in this classifier. </li>
+ * <li> Scale the gesture so its bounding box matches the bounding box of the gesture examples contained in this classifier. </li>
+ * <li> Returns the name of the class for the example that minimizes sum of distances point to point with the input gesture. </li>
+ * </ol>
+ * 
+ * @author Caroline Appert
+ *
+ */
 public class ShapeMatchingClassifier extends AbstractClassifier {
 	
-	protected class ClassifiedAndResampled {
-
-		private String className;
-		private Vector<Point2D> resampled;
-
-		public ClassifiedAndResampled(String className, Vector<Point2D> resampled) {
-			this.className = className;
-			this.resampled = resampled;
-		}
-
-		public String getClassName() {
-			return className;
-		}
-
-		public Vector<Point2D> getResampled() {
-			return resampled;
-		}
-
-	}
-
 	private double theta = Math.PI / 8;
 	private double deltaTheta = Math.PI / 90;
 
@@ -81,7 +77,12 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		return classesNames.get(match);
 	}
 	
-	public ClassifiedAndResampled classifyAndResample(Gesture g) {
+	/**
+	 * Classifies a gesture and return the collection of resampled points for the input gesture.
+	 * @param g The input gesture.
+	 * @return A NamedGesture that contains the name of the recognized class and the set of resampled points.
+	 */
+	public NamedGesture classifyAndResample(Gesture g) {
 		double minScore = Double.MAX_VALUE;
 		double currentScore;
 		
@@ -108,7 +109,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		currentDistance = minScore;
 		if (currentDistance > maximumDistance)
 			return null;
-		return new ClassifiedAndResampled(classesNames.get(match), inputPointsResampledCopy);
+		return new NamedGesture(classesNames.get(match), inputPointsResampledCopy);
 	}
 
 	/**

@@ -674,7 +674,7 @@ public class RubineClassifier extends AbstractClassifier {
 
 	/**
 	 * Computes the vector of features for a gesture.
-	 * @param points The list of points
+	 * @param g The gesture
 	 * @return The vector of features.
 	 */
 	public static Vector<Double> getFeatures(Gesture g) {
