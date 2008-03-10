@@ -17,13 +17,7 @@ import java.awt.geom.Point2D;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Vector;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import javax.swing.text.StyledEditorKit.ForegroundAction;
-
-import com.sun.tools.javac.tree.Tree.TopLevel;
 
 import fr.lri.swingstates.animations.Animation;
 import fr.lri.swingstates.sm.Tag;
