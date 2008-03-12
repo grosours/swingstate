@@ -110,6 +110,7 @@ public abstract class JTag extends Tag {
 	 * {@inheritDoc}
 	 */
 	public final boolean hasNext() {
+		if(iterator == null) return false;
 		return iterator.hasNext();
 	}
 

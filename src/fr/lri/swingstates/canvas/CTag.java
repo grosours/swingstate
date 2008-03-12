@@ -97,6 +97,7 @@ public abstract class CTag extends Tag implements CElement {
 	 * {@inheritDoc}
 	 */
 	public boolean hasNext() {
+		if(iterator == null) return false;
 		return iterator.hasNext();
 	}
 	
