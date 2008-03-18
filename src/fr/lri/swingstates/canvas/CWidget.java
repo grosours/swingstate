@@ -189,21 +189,19 @@ public class CWidget extends CShape {
 	
 	CWidget sendEvent(Point2D point2D, MouseEvent evt) {
 		if(!widget.isEnabled()) return this;
-		Point2D.Double p = new Point2D.Double(0, 0);
 		try {
-			getAbsTransform().inverseTransform(point2D, p);
-			Component deepest = SwingUtilities.getDeepestComponentAt(widget, (int)p.x, (int)p.y);
+			Point2D pt = canvasToShape(point2D);
+			Component deepest = SwingUtilities.getDeepestComponentAt(widget, (int)pt.getX(), (int)pt.getY());
 			if(deepest == null) {
-				MouseEvent newEvent = new MouseEvent(widget, evt.getID(), evt.getWhen(), evt.getModifiers(), (int)p.x, (int)p.y, evt.getClickCount(), evt.isPopupTrigger());
+				MouseEvent newEvent = new MouseEvent(widget, evt.getID(), evt.getWhen(), evt.getModifiers(), (int)pt.getX(), (int)pt.getY(), evt.getClickCount(), evt.isPopupTrigger());
 				widget.dispatchEvent(newEvent);
 			} else {
-				Point pt = SwingUtilities.convertPoint(widget, (int)p.x, (int)p.y, deepest);
-				MouseEvent newEvent = new MouseEvent(deepest, evt.getID(), evt.getWhen(), evt.getModifiers(), pt.x, pt.y, evt.getClickCount(), evt.isPopupTrigger());
+				Point pt2 = SwingUtilities.convertPoint(widget, (int)pt.getX(), (int)pt.getY(), deepest);
+				MouseEvent newEvent = new MouseEvent(deepest, evt.getID(), evt.getWhen(), evt.getModifiers(), (int)pt2.getX(), (int)pt2.getY(), evt.getClickCount(), evt.isPopupTrigger());
 				deepest.dispatchEvent(newEvent);
 			}
 			widgetChanged();
-		} catch (NoninvertibleTransformException e1) { }
-		catch (Exception e2) {
+		} catch (Exception e2) {
 			// e2.printStackTrace();
 			// Exception: component must be showing on the screen to determine its location...
 			// We ignore it.

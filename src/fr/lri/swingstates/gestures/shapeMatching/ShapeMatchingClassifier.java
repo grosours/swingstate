@@ -54,7 +54,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	public String classify(Gesture g) {
 		double minScore = Double.MAX_VALUE;
 		double currentScore;
-
+		
 		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
 		GestureUtils.resample(g.getPoints(), nbPoints, inputPointsResampled);
 		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
@@ -89,10 +89,13 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		
 		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
 		GestureUtils.resample(g.getPoints(), nbPoints, inputPointsResampled);
+//		Vector<Point2D> inputPointsResampledCopy = new Vector<Point2D>();
+//		for (Iterator<Point2D> iterator = inputPointsResampled.iterator(); iterator.hasNext(); )
+//			inputPointsResampledCopy.add((Point2D)iterator.next().clone());
+		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
 		Vector<Point2D> inputPointsResampledCopy = new Vector<Point2D>();
 		for (Iterator<Point2D> iterator = inputPointsResampled.iterator(); iterator.hasNext(); )
 			inputPointsResampledCopy.add((Point2D)iterator.next().clone());
-		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
 		GestureUtils.translateToOrigin(inputPointsResampled, inputPointsResampled);
 
 		int match = 0;
@@ -304,5 +307,28 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		throw new UnsupportedOperationException("A class in a ShapeMatchingClassifier contains only one template which can be obtained using the method getTemplate(String).");
 	}
 	
+	/**
+	 * The side size of the bounding box to which the gesture is scaled after having being resampled.
+	 * @param size The side size of the bounding box
+	 */
+	public void setSizeScaleToSquare(int size) {
+		this.sizeScaleToSquare = size;
+	}
+
+	/**
+	 * Sets the template gesture for a given existing class of gestures in this classifier.
+	 * @param className the name of the class of gestures.
+	 * @param template the template for the class className.
+	 */
+	public void setTemplate(String className, Vector<Point2D> template) {
+		int index = classesNames.indexOf(className);
+		if(index == -1) return;
+		templates.remove(index);
+		Vector<Point2D> newPoints = new Vector<Point2D>();
+		GestureUtils.resample(template, getNbPoints(), newPoints);
+		GestureUtils.scaleToSquare(newPoints, getSizeScaleToSquare(), newPoints);
+		GestureUtils.translateToOrigin(newPoints, newPoints);
+		templates.add(index, newPoints);
+	}
 	
 }
