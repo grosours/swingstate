@@ -41,17 +41,19 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	private double theta = Math.PI / 8;
 	private double deltaTheta = Math.PI / 90;
 
-//	private int nbPoints = 64;
-	private int nbPoints = 150;
+	private int nbPoints = 100;
 
 	private double currentDistance = -1;
 	private double maximumDistance = 30;
 	private double sizeScaleToSquare = 100;
+	protected int  minimumStrokeLength = 20;
 
 	/**
 	 * {@inheritDoc}
 	 */
 	public String classify(Gesture g) {
+		if(GestureUtils.pathLength(g.getPoints()) < minimumStrokeLength) return null;
+		
 		double minScore = Double.MAX_VALUE;
 		double currentScore;
 		
@@ -81,7 +83,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	/**
 	 * Classifies a gesture and return the collection of resampled points for the input gesture.
 	 * @param g The input gesture.
-	 * @return A NamedGesture that contains the name of the recognized class and the set of resampled points.
+	 * @return a NamedGesture that contains the name of the recognized class and the set of resampled points.
 	 */
 	public NamedGesture classifyAndResample(Gesture g) {
 		double minScore = Double.MAX_VALUE;
@@ -329,6 +331,22 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		GestureUtils.scaleToSquare(newPoints, getSizeScaleToSquare(), newPoints);
 		GestureUtils.translateToOrigin(newPoints, newPoints);
 		templates.add(index, newPoints);
+	}
+
+	public double getThreshold() {
+		return maximumDistance;
+	}
+	
+	public void setThreshold(double maximumDistance) {
+		this.maximumDistance = maximumDistance;
+	}
+	
+	public int getMinimumStrokeLength() {
+		return minimumStrokeLength;
+	}
+
+	public void setMinimumStrokeLength(int minimumStrokeLength) {
+		this.minimumStrokeLength = minimumStrokeLength;
 	}
 	
 }

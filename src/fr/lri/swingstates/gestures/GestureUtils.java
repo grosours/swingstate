@@ -136,7 +136,7 @@ public class GestureUtils {
 		double h = maxY - minY;
 		if (h < 1)
 			h = 1;
-		return new Rectangle2D.Double(minX, maxX, w, h);
+		return new Rectangle2D.Double(minX, minY, w, h);
 	}
 
 	public static void scaleToSquare(Vector<Point2D> points, double size, Vector<Point2D> newPoints) {
