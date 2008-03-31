@@ -116,6 +116,13 @@ public abstract class MouseOnPosition extends EventOnPosition {
 	}
 	
 	/**
+	 * @return the awt mouse event that fires this transition.
+	 */
+	public MouseEvent getMouseEvent() {
+		return (MouseEvent) triggeringEvent;
+	}
+	
+	/**
 	 * {@inheritDoc}
 	 */
 	public Point2D getPoint() {

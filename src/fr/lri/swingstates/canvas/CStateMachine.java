@@ -277,7 +277,7 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			}
 		}
 	}
-
+	
 	/**
 	 * Makes this state machine have the lowest priority. This state machines
 	 * will receive events after every state machine has received it.
@@ -1239,6 +1239,13 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 */
 		public InputEvent getInputEvent() {
 			return (InputEvent) triggeringEvent;
+		}
+		
+		/**
+		 * @return the awt mouse event that fires this transition.
+		 */
+		public MouseEvent getMouseEvent() {
+			return (MouseEvent) triggeringEvent;
 		}
 
 		/**
@@ -2624,10 +2631,17 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		}
 
 		/**
-		 * @return the awt mouse event that fires this transition.
+		 * @return the awt input event that fires this transition.
 		 */
 		public InputEvent getInputEvent() {
 			return (InputEvent) triggeringEvent;
+		}
+		
+		/**
+		 * @return the awt mouse event that fires this transition.
+		 */
+		public MouseEvent getMouseEvent() {
+			return (MouseEvent) triggeringEvent;
 		}
 
 		/**

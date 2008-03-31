@@ -473,33 +473,45 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 	/**
 	 * {@inheritDoc}
 	 */
-	public void mouseWheelMoved(MouseWheelEvent arg0) {
-		pickAndProcess(arg0);
+	public void mouseWheelMoved(MouseWheelEvent event) {
+		if (event.getClass().equals(MouseEvent.class) && masterPicker != null) {
+			masterPicker.move(event.getPoint());
+		}
+		pickAndProcess(event);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void mouseClicked(MouseEvent arg0) {
-		pickAndProcess(arg0);
+	public void mouseClicked(MouseEvent event) {
+		if (event.getClass().equals(MouseEvent.class) && masterPicker != null) {
+			masterPicker.move(event.getPoint());
+		}
+		pickAndProcess(event);
 		requestFocusInWindow();
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void mouseReleased(MouseEvent arg0) {
-		pickAndProcess(arg0);
+	public void mouseReleased(MouseEvent event) {
+		if (event.getClass().equals(MouseEvent.class) && masterPicker != null) {
+			masterPicker.move(event.getPoint());
+		}
+		pickAndProcess(event);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void mouseEntered(MouseEvent arg0) {
+	public void mouseEntered(MouseEvent event) {
+		if (event.getClass().equals(MouseEvent.class) && masterPicker != null) {
+			masterPicker.move(event.getPoint());
+		}
 		if (hasTransitionOfClass(Enter.class)
 				|| hasTransitionOfClass(EnterOnShape.class)
 				|| hasTransitionOfClass(EnterOnTag.class)) {
-			processEvent(arg0);
+			processEvent(event);
 		}
 	}
 
@@ -507,6 +519,9 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 	 * {@inheritDoc}
 	 */
 	public void mouseExited(MouseEvent event) {
+		if (event.getClass().equals(MouseEvent.class) && masterPicker != null) {
+			masterPicker.move(event.getPoint());
+		}
 		if (hasTransitionOfClass(LeaveOnShape.class)
 				|| hasTransitionOfClass(LeaveOnTag.class)) {
 			processEvent(event);
@@ -538,8 +553,11 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 	/**
 	 * {@inheritDoc}
 	 */
-	public void mousePressed(MouseEvent arg0) {
-		pickAndProcess(arg0);
+	public void mousePressed(MouseEvent event) {
+		if (event.getClass().equals(MouseEvent.class) && masterPicker != null) {
+			masterPicker.move(event.getPoint());
+		}
+		pickAndProcess(event);
 	}
 
 	/**

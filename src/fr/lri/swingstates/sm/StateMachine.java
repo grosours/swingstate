@@ -8,6 +8,7 @@ package fr.lri.swingstates.sm;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -259,7 +260,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * Override it to specify required variables initializations for a specific machine.
 	 */
 	public void init() {
-		
+
 	}
 
 	/**
@@ -282,70 +283,93 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 		Class smClass = this.getClass();
 //		System.out.println("build state machine "+smClass);
 
-		Field[] machineFields = smClass.getDeclaredFields();
-		for (int i = 0; i < machineFields.length; i++) {
-			String fieldName = machineFields[i].getName();
-			Class fieldType = machineFields[i].getType();
+
+		// The states of a state machine is the union of:
+		// - all its public State fields (including those of its ancestors) and
+		// - all its declared State fields (a declared field overwrite a public existing one of the same name)
+		ArrayList<Field> stateFields = new ArrayList<Field>();
+		Field[] publicFields = smClass.getFields();
+		for (int i = 0; i < publicFields.length; i++) {
+			Class<?> fieldType = publicFields[i].getType();
 			if (State.class.isAssignableFrom(fieldType)) {
-				try {
-					machineFields[i].setAccessible(true);
-					State s = (State) machineFields[i].get(this);
-					// it can happen when an animation is running
-					if(s == null) return;
-					if (s.getName() == null) 
-						s.setName(fieldName.intern());
-					allStates.add(s);
-//					System.out.println("\tadd state "+s.getName());
-
-					if(initialState == null){
-						currentState = s;
-						initialState = s;
-					}
-					s.setMachine(this);
-
-					// *** Begin initialization transitions for state s *** //
-					Class stateClass = s.getClass();
-					LinkedList<Field> allFields = new LinkedList<Field>();
-					Class tmp = stateClass;
-					// collect all the fields of super classes between this class 
-					// and the State class to collect all the declared transitions.
-					// Example:
-					// class SelectionState extends State {
-					//		Transition t1;
-					// }
-					// [...]
-					// State s = new SelectionState() {
-					//		Transition t2;
-					// }
-					// => s must contain the transitions t1 and t2
-					while(State.class.isAssignableFrom(tmp.getSuperclass())) {
-						Field[] fields = tmp.getDeclaredFields();
-						for(int cpt = 0; cpt < fields.length; cpt++) {
-							allFields.add(fields[cpt]);
-						}
-						tmp = tmp.getSuperclass();
-					}
-					for (int j = 0; j < allFields.size(); j++) {
-						Class fieldStateType = allFields.get(j).getType();
-						if (Transition.class.isAssignableFrom(fieldStateType)) {
-							allFields.get(j).setAccessible(true);
-							Transition t = (Transition) allFields.get(j).get(s);
-							// it can happen when an animation is running
-							if(t == null) return;
-							s.addTransition(t);
-//							System.out.println("\t\tadd transition "+t);
-							t.setInputState(s);
-						}
-					}
-					// *** End initialization transitions for state s *** //
-				} catch (IllegalArgumentException e) {
-					e.printStackTrace();
-				}
-				catch (IllegalAccessException e) {
-					e.printStackTrace();
-				}
-				// System.out.print((stateIndex > 1 ? ", ":"") + state.name);
+				stateFields.add(publicFields[i]);
 			}
+		}
+		Field[] declaredFields = smClass.getDeclaredFields();
+		for (int i = 0; i < declaredFields.length; i++) {
+			Class<?> fieldType = declaredFields[i].getType();
+			if (State.class.isAssignableFrom(fieldType)) {
+				int index = stateFields.indexOf(declaredFields[i]);
+				if(index != -1) {
+					stateFields.set(index, declaredFields[i]);
+				} else {
+					stateFields.add(declaredFields[i]);
+				}
+			}
+		}
+
+		for (int i = 0; i < stateFields.size(); i++) {
+			String fieldName = stateFields.get(i).getName();
+			try {
+				stateFields.get(i).setAccessible(true);
+				State s = (State) stateFields.get(i).get(this);
+				// it can happen when an animation is running
+				if(s == null) {
+					return;
+				}
+				if (s.getName() == null) 
+					s.setName(fieldName.intern());
+				allStates.add(s);
+
+				if(initialState == null){
+					currentState = s;
+					initialState = s;
+				}
+				s.setMachine(this);
+
+				// *** Begin initialization transitions for state s *** //
+				Class<?> stateClass = s.getClass();
+				LinkedList<Field> allFields = new LinkedList<Field>();
+				Class<?> tmp = stateClass;
+				// collect all the fields of super classes between this class 
+				// and the State class to collect all the declared transitions.
+				// Example:
+				// class SelectionState extends State {
+				//		Transition t1;
+				// }
+				// [...]
+				// State s = new SelectionState() {
+				//		Transition t2;
+				// }
+				// => s must contain the transitions t1 and t2
+				while(State.class.isAssignableFrom(tmp.getSuperclass())) {
+					Field[] fields = tmp.getDeclaredFields();
+					for(int cpt = 0; cpt < fields.length; cpt++) {
+						allFields.add(fields[cpt]);
+					}
+					tmp = tmp.getSuperclass();
+				}
+				for (int j = 0; j < allFields.size(); j++) {
+					Class<?> fieldStateType = allFields.get(j).getType();
+					if (Transition.class.isAssignableFrom(fieldStateType)) {
+						allFields.get(j).setAccessible(true);
+						Transition t = (Transition) allFields.get(j).get(s);
+						// it can happen when an animation is running
+						if(t == null) return;
+						s.addTransition(t);
+//						System.out.println("\t\tadd transition "+t);
+						t.setInputState(s);
+					}
+				}
+				// *** End initialization transitions for state s *** //
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+			}
+			catch (IllegalAccessException e) {
+				e.printStackTrace();
+			}
+			// System.out.print((stateIndex > 1 ? ", ":"") + state.name);
+//			}
 		}
 		// System.out.println(".");
 		inited = true;

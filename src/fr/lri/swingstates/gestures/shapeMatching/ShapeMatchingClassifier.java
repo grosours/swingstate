@@ -86,14 +86,13 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	 * @return a NamedGesture that contains the name of the recognized class and the set of resampled points.
 	 */
 	public NamedGesture classifyAndResample(Gesture g) {
+		if(GestureUtils.pathLength(g.getPoints()) < minimumStrokeLength) return null;
+		
 		double minScore = Double.MAX_VALUE;
 		double currentScore;
 		
 		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
 		GestureUtils.resample(g.getPoints(), nbPoints, inputPointsResampled);
-//		Vector<Point2D> inputPointsResampledCopy = new Vector<Point2D>();
-//		for (Iterator<Point2D> iterator = inputPointsResampled.iterator(); iterator.hasNext(); )
-//			inputPointsResampledCopy.add((Point2D)iterator.next().clone());
 		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
 		Vector<Point2D> inputPointsResampledCopy = new Vector<Point2D>();
 		for (Iterator<Point2D> iterator = inputPointsResampled.iterator(); iterator.hasNext(); )
@@ -111,10 +110,11 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 			}
 			cpt++;
 		}
-
+		
 		currentDistance = minScore;
-		if (currentDistance > maximumDistance)
+		if (currentDistance > maximumDistance) {
 			return null;
+		}
 		return new NamedGesture(classesNames.get(match), inputPointsResampledCopy);
 	}
 
@@ -198,6 +198,13 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 			}
 			templates.add(points);
 		}
+		try {
+			maximumDistance = in.readDouble();
+			minimumStrokeLength = in.readInt();
+		} catch(IOException ioe) {
+			maximumDistance = 30;
+			minimumStrokeLength = 20;
+		}
 		return this;
 	}
 
@@ -212,6 +219,8 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 				out.writeDouble(next.getY());
 			}
 		}
+		out.writeDouble(maximumDistance);
+		out.writeInt(minimumStrokeLength);
 	}
 
 	/**
@@ -230,7 +239,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		for (int nc = 0; nc < classesNames.size(); nc++) {
 			minClassScore = Integer.MAX_VALUE;
 			Vector<Point2D> gesturePoints = templates.get(nc);
-			score = GestureUtils.distanceAtBestAngle(inputPointsResampled, gesturePoints, -theta, theta, deltaTheta);
+			score = GestureUtils.pathDistance(inputPointsResampled, gesturePoints);
 			if (score < minClassScore)
 				minClassScore = score;
 			if (nc == 0) {

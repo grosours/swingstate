@@ -1953,7 +1953,7 @@ public class CShape implements Cloneable, CElement {
 	 * Copies this shape into a destination shape. The copy differs from the
 	 * original as follows: If this shape is in a canvas, the copy is added to
 	 * that canvas, on top all other objects; The copy has no children, i.e. it
-	 * is not the parent of any shape, even if the original has.
+	 * is not the parent of any shape, even if the original has a parent.
 	 * 
 	 * @param sms
 	 *            The destination shape
