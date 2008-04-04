@@ -58,8 +58,6 @@ public abstract class AbstractClassifier {
 	 * @return the index of this class in the list of classes (-1 if this class already exists and thus has not been added).
 	 */
 	public int addClass(String className) {
-		int index = classesNames.indexOf(className);
-		if(index != -1) return -1;
 		classesNames.add(className);
 		templates.add(null);
 		return classesNames.size() - 1;
@@ -186,5 +184,12 @@ public abstract class AbstractClassifier {
 	 */
 	public ArrayList<String> getClassesNames() {
 		return classesNames;
+	}
+
+	/**
+	 * @return The list of templates in this classifier (in the order corresponding to the classes names order returned by <code>getClassesNames</code>).
+	 */
+	public ArrayList<Vector<Point2D>> getTemplates() {
+		return templates;
 	}
 }

@@ -18,15 +18,17 @@ public class NamedGesture {
 
 	private String name;
 	private Vector<Point2D> points;
+	private Vector<Point2D> templatePoints;
 
 	/**
 	 * Builds a NamedGesture
 	 * @param name The gesture name
 	 * @param points The collection of points in this gesture
 	 */
-	public NamedGesture(String name, Vector<Point2D> points) {
+	public NamedGesture(String name, Vector<Point2D> points, Vector<Point2D> templatePoints) {
 		this.name = name;
 		this.points = points;
+		this.templatePoints = templatePoints;
 	}
 
 	/**
@@ -41,6 +43,13 @@ public class NamedGesture {
 	 */
 	public Vector<Point2D> getPoints() {
 		return points;
+	}
+
+	/**
+	 * @return The collection of point of the best matching template.
+	 */
+	public Vector<Point2D> getTemplatePoints() {
+		return templatePoints;
 	}
 
 }

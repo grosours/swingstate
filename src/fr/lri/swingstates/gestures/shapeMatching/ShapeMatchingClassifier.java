@@ -73,7 +73,6 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 			}
 			cpt++;
 		}
-
 		currentDistance = minScore;
 		if (currentDistance > maximumDistance)
 			return null;
@@ -101,21 +100,30 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 
 		int match = 0;
 		int cpt = 0;
+		Vector<Point2D> bestTemplate = null;
 		for (Iterator<Vector<Point2D>> templatesIterator = templates.iterator(); templatesIterator.hasNext();) {
 			Vector<Point2D> next = templatesIterator.next();
 			currentScore = GestureUtils.pathDistance(inputPointsResampled, next);
 			if (currentScore < minScore) {
 				minScore = currentScore;
 				match = cpt;
+				bestTemplate = next;
 			}
 			cpt++;
 		}
+		
+		
 		
 		currentDistance = minScore;
 		if (currentDistance > maximumDistance) {
 			return null;
 		}
-		return new NamedGesture(classesNames.get(match), inputPointsResampledCopy);
+		Vector<Point2D> bestTemplateCopy = new Vector<Point2D>();
+		for (Iterator<Point2D> iterator = bestTemplate.iterator(); iterator.hasNext();) {
+			Point2D next = iterator.next();
+			bestTemplateCopy.add(new Point2D.Double(next.getX(), next.getY()));
+		}
+		return new NamedGesture(classesNames.get(match), inputPointsResampledCopy, bestTemplateCopy);
 	}
 
 	/**
@@ -178,13 +186,11 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	 */
 	public void addClass(String className, Vector<Point2D> template) {
 		int index = addClass(className);
-		if (index != -1) {
-			Vector<Point2D> newPoints = new Vector<Point2D>();
-			GestureUtils.resample(template, getNbPoints(), newPoints);
-			GestureUtils.scaleToSquare(newPoints, getSizeScaleToSquare(), newPoints);
-			GestureUtils.translateToOrigin(newPoints, newPoints);
-			setTemplate(className, newPoints);
-		}
+		Vector<Point2D> newPoints = new Vector<Point2D>();
+		GestureUtils.resample(template, getNbPoints(), newPoints);
+		GestureUtils.scaleToSquare(newPoints, getSizeScaleToSquare(), newPoints);
+		GestureUtils.translateToOrigin(newPoints, newPoints);
+		templates.set(index, newPoints);
 	}
 
 	protected Object read(DataInputStream in) throws IOException {
