@@ -1457,8 +1457,12 @@ public class CShape implements Cloneable, CElement {
 		Point2D ptDst = new Point2D.Double();
 		try {
 			absTransform.inverseTransform(p, ptDst);
-			if ((filled && shape.contains(ptDst)) || (!filled && outlined && stroke.createStrokedShape(shape).contains(ptDst)))
-				return this;
+			if ((filled && shape.contains(ptDst)) 
+					|| (!filled && outlined && stroke.createStrokedShape(shape).contains(ptDst)))
+				if(clip == null)
+					return this;
+				else
+					return clip.contains(p) != null ? this : null;
 		} catch (NoninvertibleTransformException e) {
 			return null;
 		}
@@ -1480,8 +1484,12 @@ public class CShape implements Cloneable, CElement {
 		try {
 			absTransform.inverseTransform(p, ptDst);
 			pickingRectangle.setBounds((int) ptDst.getX() - tolerance / 2, (int) ptDst.getY() - tolerance / 2, tolerance, tolerance);
-			if ((filled && ((Graphics2D) canvas.getGraphics()).hit(pickingRectangle, shape, false)) || (outlined && ((Graphics2D) canvas.getGraphics()).hit(pickingRectangle, shape, true)))
-				return this;
+			if ((filled && ((Graphics2D) canvas.getGraphics()).hit(pickingRectangle, shape, false)) 
+					|| (outlined && ((Graphics2D) canvas.getGraphics()).hit(pickingRectangle, shape, true)))
+				if(clip == null)
+					return this;
+				else
+					return clip.contains(p) != null ? this : null;
 		} catch (NoninvertibleTransformException e) {
 			return null;
 		}
@@ -1515,7 +1523,8 @@ public class CShape implements Cloneable, CElement {
 	 * @return this shape if the rectangle is inside this shape, null otherwise.
 	 */
 	public CShape contains(Rectangle r) {
-		if (contains(new Point2D.Double(r.getMinX(), r.getMinY())) != null && contains(new Point2D.Double(r.getMaxX(), r.getMinY())) != null
+		if (contains(new Point2D.Double(r.getMinX(), r.getMinY())) != null 
+				&& contains(new Point2D.Double(r.getMaxX(), r.getMinY())) != null
 				&& contains(new Point2D.Double(r.getMinX(), r.getMaxY())) != null)
 			return contains(new Point2D.Double(r.getMaxX(), r.getMaxY()));
 		return null;
