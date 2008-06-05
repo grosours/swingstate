@@ -132,6 +132,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * @return the current state.
 	 */
 	public State getCurrentState(){
+		if(!inited) initStatesAndTransitions();
 		return this.currentState;
 	}
 
@@ -140,6 +141,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * @return the initial state.
 	 */
 	public State getInitialState(){
+		if(!inited) initStatesAndTransitions();
 		return this.initialState;
 	}
 
@@ -148,6 +150,7 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * @return the vector containing all the states.
 	 */
 	public Vector<State> getAllStates(){
+		if(!inited) initStatesAndTransitions();
 		return this.allStates;
 	}
 
@@ -576,7 +579,6 @@ public abstract class StateMachine implements ActionListener, StateMachineListen
 	 * Note that for this to work, the field must be declared public.
 	 * @param s the name of the state to look up
 	 * @return the state object
-	 * @throws StateNotFoundException if the state is not found in this machine.
 	 */
 	public State getState(String s) throws StateNotFoundException {
 		if (! inited)

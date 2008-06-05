@@ -32,10 +32,9 @@ import java.awt.geom.RectangularShape;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import fr.lri.swingstates.animations.Animation;
+import fr.lri.swingstates.sm.GraphicalShape;
 
 /**
  * A shape to be added to a <code>Canvas</code>. The shape is defined by a
@@ -91,7 +90,10 @@ import fr.lri.swingstates.animations.Animation;
  * @author Caroline Appert
  */
 
-public class CShape implements Cloneable, CElement {
+public class CShape implements Cloneable, CElement
+// +++
+, GraphicalShape
+{
 
 	protected static final CShape DEFAULT_CLIP = new CRectangle();
 	private static final Shape PLACEBO_SHAPE = new Line2D.Double();
@@ -1477,7 +1479,7 @@ public class CShape implements Cloneable, CElement {
 	 * @see java.awt.Shape#contains(Point2D)
 	 * @return this shape if the point p is inside, null otherwise.
 	 */
-	CShape pick(Point2D p, int tolerance) {
+	public CShape pick(Point2D p, int tolerance) {
 		if (canvas == null || (Graphics2D) canvas.getGraphics() == null)
 			return null;
 		Point2D ptDst = new Point2D.Double();
@@ -2229,6 +2231,13 @@ public class CShape implements Cloneable, CElement {
 		anim.setAnimatedElement(this);
 		anim.start();
 		return this;
+	}
+
+	
+	// +++
+	public boolean isPicked(Point2D location) {
+		return (isPickable()
+				&& pick(location, 2) != null);
 	}
 
 }

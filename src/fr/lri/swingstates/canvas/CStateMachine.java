@@ -448,6 +448,10 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 			}
 			return false;
 		}
+		
+		public boolean pickingRequired() {
+			return true;
+		}
 	}
 
 	/**
@@ -2223,7 +2227,14 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 * @return name of the tag.
 		 */
 		public String getTagName() {
-			return tagName;
+			if(tagName != null) return tagName;
+			else {
+				if(isNamed) {
+					if(tagObject != null && tagObject instanceof CNamedTag)
+						return ((CNamedTag)tagObject).getName();
+				}
+			}
+			return null;
 		}
 
 		/**
@@ -2234,18 +2245,6 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 		 */
 		public CTag getTag() {
 			return tagObject;
-		}
-
-		void setTagObject(CTag tag) {
-			tagObject = tag;
-		}
-
-		void setTagClass(Class tagClass) {
-			this.tagClass = tagClass;
-		}
-
-		void setTagName(String tagName) {
-			this.tagName = tagName;
 		}
 
 		/**
@@ -2271,11 +2270,11 @@ public abstract class CStateMachine extends BasicInputStateMachine {
 				for (Iterator<CTag> it = source.getCanvas().allCanvasTags.iterator(); it.hasNext();) {
 					CTag o = (CTag) it.next();
 					if (tagClass.isAssignableFrom(o.getClass())) {
-						if (source.hasTag(o)) {
+						if (o.tagsShape(source)) {
 							hasTested = true;
 							tagObject = o;
-							if (o instanceof CNamedTag)
-								setTagName(((CNamedTag) o).getName());
+//							if (o instanceof CNamedTag)
+//								setTagName(((CNamedTag) o).getName());
 							break;
 						}
 					}

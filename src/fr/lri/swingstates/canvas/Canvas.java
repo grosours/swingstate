@@ -784,7 +784,7 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 		LinkedList<CShape> pickedShapes = new LinkedList<CShape>();
 		synchronized(displayOrder) {
 			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
-				CShape sms = (CShape) (i.next());
+				CShape sms = i.next();
 				if (sms.isPickable())
 					if (sms.pick(p, 2) != null)
 						pickedShapes.addFirst(sms);

@@ -211,6 +211,13 @@ public abstract class Transition {
 		this.triggeringEvent = triggeringEvent;
 	}
 	
+	public boolean pickingRequired() {
+		return false;
+	}
+	
+	public boolean manageEventID(int id) {
+		return true;
+	}
 	
 }
 
