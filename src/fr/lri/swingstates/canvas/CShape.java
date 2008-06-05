@@ -1461,7 +1461,7 @@ public class CShape implements Cloneable, CElement
 			absTransform.inverseTransform(p, ptDst);
 			if ((filled && shape.contains(ptDst)) 
 					|| (!filled && outlined && stroke.createStrokedShape(shape).contains(ptDst)))
-				if(clip == null)
+				if(clip == null || clip == DEFAULT_CLIP)
 					return this;
 				else
 					return clip.contains(p) != null ? this : null;
@@ -1488,7 +1488,7 @@ public class CShape implements Cloneable, CElement
 			pickingRectangle.setBounds((int) ptDst.getX() - tolerance / 2, (int) ptDst.getY() - tolerance / 2, tolerance, tolerance);
 			if ((filled && ((Graphics2D) canvas.getGraphics()).hit(pickingRectangle, shape, false)) 
 					|| (outlined && ((Graphics2D) canvas.getGraphics()).hit(pickingRectangle, shape, true)))
-				if(clip == null)
+				if(clip == null || clip == DEFAULT_CLIP)
 					return this;
 				else
 					return clip.contains(p) != null ? this : null;
