@@ -61,7 +61,7 @@ public class Gesture {
 		return this;
 	}
 
-	void write(DataOutputStream out) throws IOException {
+	public void write(DataOutputStream out) throws IOException {
 		out.writeInt(points.size());
 		out.writeDouble(min.getX());
 		out.writeDouble(min.getY());
@@ -79,7 +79,7 @@ public class Gesture {
 		}
 	}
 
-	Object read(DataInputStream in) throws IOException {
+	public Object read(DataInputStream in) throws IOException {
 		int nPoints = in.readInt();
 		// ignore min, max
 		// they will be initialized when rebuilding gesture with addPoint method

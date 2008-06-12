@@ -2,13 +2,10 @@
  *   Authors: Caroline Appert (caroline.appert@lri.fr)
  *   Copyright (c) Universite Paris-Sud XI, 2007. All Rights Reserved
  *   Licensed under the GNU LGPL. For full terms see the file COPYING.
-*/
+ */
 package fr.lri.swingstates.gestures.shapeMatching;
 
-import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -18,17 +15,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
-import javax.imageio.ImageIO;
-
-import fr.lri.swingstates.canvas.CEllipse;
-import fr.lri.swingstates.canvas.CPolyLine;
-import fr.lri.swingstates.canvas.CRectangle;
-import fr.lri.swingstates.canvas.Canvas;
 import fr.lri.swingstates.gestures.AbstractClassifier;
 import fr.lri.swingstates.gestures.Gesture;
+import fr.lri.swingstates.gestures.GestureClass;
 import fr.lri.swingstates.gestures.GestureUtils;
 import fr.lri.swingstates.gestures.Score;
 
@@ -45,9 +38,146 @@ import fr.lri.swingstates.gestures.Score;
  *
  */
 public class ShapeMatchingClassifier extends AbstractClassifier {
-	
-	private double theta = Math.PI / 8;
-	private double deltaTheta = Math.PI / 90;
+
+	class ResampledGestureClass extends GestureClass {
+
+		private Vector<Vector<Point2D>> resampledGestures = new Vector<Vector<Point2D>>();
+
+		ResampledGestureClass() {
+			super();
+		}
+
+		ResampledGestureClass(String n) {
+			super(n);
+		}
+
+		/**
+		 * {@inheritDoc} Each time a gesture is added, a vector of points
+		 * corresponding to this gesture as resampled, rotated and scaled is
+		 * computed and stored in <code>resampledGestures</code>.
+		 */
+		public void addExample(Gesture gesture) {
+			super.addExample(gesture);
+			Vector<Point2D> newPoints = new Vector<Point2D>();
+			GestureUtils.resample(gesture.getPoints(), ShapeMatchingClassifier.this.getNbPoints(), newPoints);
+			GestureUtils.scaleToSquare(newPoints, ShapeMatchingClassifier.this.getSizeScaleToSquare(), newPoints);
+			GestureUtils.translateToOrigin(newPoints, newPoints);
+			resampledGestures.add(newPoints);
+		}
+		
+		public void addResampledExample(Vector<Point2D> gesture) {
+			super.addExample(null);
+			resampledGestures.add(gesture);
+		}
+
+		/**
+		 * {@inheritDoc}
+		 */
+		public boolean removeExample(Gesture gesture) {
+			if (!gestures.contains(gesture))
+				return false;
+			int index = gestures.indexOf(gesture);
+			if (index != -1)
+				resampledGestures.remove(index);
+			return super.removeExample(gesture);
+		}
+
+		/**
+		 * @return The vector of gesture examples as resampled, rotated and scaled.
+		 * @see Dollar1GestureClass#addExample(Gesture)
+		 */
+		public Vector<Vector<Point2D>> getResampledGestures() {
+			return resampledGestures;
+		}
+
+		/**
+		 * @return The average vector of this class. A point#i in this vector is the
+		 *         gravity center of points#i of all examples.
+		 */
+		public Vector<Point2D> getAverage() {
+			int nbPoints = ShapeMatchingClassifier.this.getNbPoints();
+			Vector<Point2D> average = new Vector<Point2D>(nbPoints);
+			double sumX, sumY;
+			for (int i = 0; i < nbPoints; i++) {
+				sumX = 0;
+				sumY = 0;
+				for (Iterator<Vector<Point2D>> iterator = resampledGestures.iterator(); iterator.hasNext();) {
+					Point2D pt = iterator.next().get(i);
+					sumX += pt.getX();
+					sumY += pt.getY();
+				}
+				average.add(new Point2D.Double(sumX / resampledGestures.size(), sumY / resampledGestures.size()));
+			}
+			return average;
+		}
+		
+		public void write(DataOutputStream out) throws IOException {
+			out.writeUTF(name);
+//			System.out.println("* "+name);
+			out.writeInt(gestures.size());
+//			System.out.println("* "+gestures.size());
+			for (Iterator<Gesture> iterator = gestures.iterator(); iterator.hasNext();) {
+				iterator.next().write(out);
+//				System.out.println("* gesture");
+			}
+			out.writeInt(resampledGestures.size());
+//			System.out.println("* "+resampledGestures.size());
+			for (Iterator<Vector<Point2D>> iterator = resampledGestures.iterator(); iterator.hasNext();) {
+				Vector<Point2D> resampledGesture = iterator.next();
+				out.writeInt(resampledGesture.size());
+//				System.out.println("* "+resampledGesture.size());
+				for (Iterator<Point2D> it = resampledGesture.iterator(); it.hasNext();) {
+					Point2D pt = it.next();
+					out.writeDouble(pt.getX());
+					out.writeDouble(pt.getY());
+//					System.out.println("* "+pt.getX());
+//					System.out.println("* "+pt.getY());
+				}
+			}
+			
+		}
+
+		/**
+		 * Reads the definition of this gesture class from an input stream.
+		 * @param in The input stream
+		 * @return This gesture class initialized from input stream <code>in</code>.
+		 * @throws IOException if a reading error occurs.
+		 */
+		public Object read(DataInputStream in) throws IOException {
+			name = in.readUTF();
+			int nExamples = in.readInt();
+			gestures = new Vector<Gesture>();
+			for (int i = 0; i < nExamples; i++) {
+				Gesture g = new Gesture();
+//				System.out.println("* gesture");
+				g.read(in);
+				addExample(g);
+			}
+			int nResampledGestures = in.readInt();
+//			System.out.println("* "+nResampledGestures);
+			resampledGestures = new Vector<Vector<Point2D>>();
+			for(int i = 0; i < nResampledGestures; i++) {
+				Vector<Point2D> resampledGesture = new Vector<Point2D>();
+				int nPoints = in.readInt();
+//				System.out.println("* "+nPoints);
+				for(int j = 0; j < nPoints; j++) {
+					double x = in.readDouble();
+					double y = in.readDouble();
+//					System.out.println("* "+x);
+//					System.out.println("* "+y);
+					Point2D pt = new Point2D.Double(x, y);
+					resampledGesture.add(pt);
+				}
+			}
+			return this;
+		}
+
+	}
+
+	protected ArrayList<ResampledGestureClass>    classes = new ArrayList<ResampledGestureClass>();
+
+	protected double theta = Math.PI / 8;
+	protected double deltaTheta = Math.PI / 90;
 
 	private int nbPoints = 100;
 
@@ -59,34 +189,74 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	/**
 	 * {@inheritDoc}
 	 */
-	public String classify(Gesture g) {
-		if(GestureUtils.pathLength(g.getPoints()) < minimumStrokeLength) return null;
-		
-		double minScore = Double.MAX_VALUE;
-		double currentScore;
-		
+	public Vector<Double> distance(String gesture1, String gesture2) {
+		Vector<Double> res = new Vector<Double>();
+		res.add(GestureUtils.pathDistance(getTemplate(gesture1), getTemplate(gesture2)));
+		return res;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public double distance(Gesture gesture, String gesture2) {
+		Vector<Point2D> inputPointsResampled = normalize(gesture);
+		return distance(inputPointsResampled, gesture2);
+	}
+
+	public Vector<Point2D> normalize(Gesture gesture) {
 		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
-		GestureUtils.resample(g.getPoints(), nbPoints, inputPointsResampled);
+		GestureUtils.resample(gesture.getPoints(), nbPoints, inputPointsResampled);
 		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
 		GestureUtils.translateToOrigin(inputPointsResampled, inputPointsResampled);
+		return inputPointsResampled;
+	}
 
-		int match = 0;
-		int cpt = 0;
-		for (Iterator<Vector<Point2D>> templatesIterator = templates.iterator(); templatesIterator.hasNext();) {
-			Vector<Point2D> next = templatesIterator.next();
-			currentScore = GestureUtils.pathDistance(inputPointsResampled, next);
-			if (currentScore < minScore) {
-				minScore = currentScore;
-				match = cpt;
+	public double distance(Vector<Point2D> inputPointsResampled, String gesture2) {
+		return distance(inputPointsResampled, getTemplate(gesture2));
+	}
+
+	public double distance(Vector<Point2D> inputPointsResampled1, Vector<Point2D> inputPointsResampled2) {
+		return GestureUtils.pathDistance(inputPointsResampled1, inputPointsResampled2);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public String classify(Gesture g) {
+		if(GestureUtils.pathLength(g.getPoints()) < minimumStrokeLength) return null;
+
+		double minScore = Double.MAX_VALUE;
+		double currentScore;
+		GestureClass recognized = null;
+
+		Vector<Point2D> inputPointsResampled = normalize(g);
+
+		for (Iterator<ResampledGestureClass> classesIterator = classes.iterator(); classesIterator.hasNext();) {
+			ResampledGestureClass nextClass = classesIterator.next();
+			if(nextClass.getResampledGestures().size() > 0) {
+			for (Iterator<Vector<Point2D>> gesturesIterator = nextClass.getResampledGestures().iterator(); gesturesIterator.hasNext();) {
+				Vector<Point2D> gesturePoints = gesturesIterator.next();
+				currentScore = distance(inputPointsResampled, gesturePoints);
+				if (currentScore < minScore) {
+					minScore = currentScore;
+					recognized = nextClass;
+				}
 			}
-			cpt++;
+			} else {
+				Vector<Point2D> gesturePoints = getTemplates().get(getClassesNames().indexOf(nextClass.getName()));
+				currentScore = distance(inputPointsResampled, gesturePoints);
+				if (currentScore < minScore) {
+					minScore = currentScore;
+					recognized = nextClass;
+				}
+			}
 		}
 		currentDistance = minScore;
 		if (currentDistance > maximumDistance)
 			return null;
-		return classesNames.get(match);
+		return recognized.getName();
 	}
-	
+
 	/**
 	 * Classifies a gesture and return the collection of resampled points for the input gesture.
 	 * @param g The input gesture.
@@ -94,44 +264,46 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	 */
 	public NamedGesture classifyAndResample(Gesture g) {
 		if(GestureUtils.pathLength(g.getPoints()) < minimumStrokeLength) return null;
-		
+
 		double minScore = Double.MAX_VALUE;
 		double currentScore;
-		
-		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
-		GestureUtils.resample(g.getPoints(), nbPoints, inputPointsResampled);
-		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
-		Vector<Point2D> inputPointsResampledCopy = new Vector<Point2D>();
-		for (Iterator<Point2D> iterator = inputPointsResampled.iterator(); iterator.hasNext(); )
-			inputPointsResampledCopy.add((Point2D)iterator.next().clone());
-		GestureUtils.translateToOrigin(inputPointsResampled, inputPointsResampled);
+		GestureClass recognized = null;
 
-		int match = 0;
-		int cpt = 0;
+		Vector<Point2D> inputPointsResampled = normalize(g);
 		Vector<Point2D> bestTemplate = null;
-		for (Iterator<Vector<Point2D>> templatesIterator = templates.iterator(); templatesIterator.hasNext();) {
-			Vector<Point2D> next = templatesIterator.next();
-			currentScore = GestureUtils.pathDistance(inputPointsResampled, next);
-			if (currentScore < minScore) {
-				minScore = currentScore;
-				match = cpt;
-				bestTemplate = next;
+
+		for (Iterator<ResampledGestureClass> classesIterator = classes.iterator(); classesIterator.hasNext();) {
+			ResampledGestureClass nextClass = classesIterator.next();
+			if(nextClass.getResampledGestures().size() > 0) {
+				for (Iterator<Vector<Point2D>> gesturesIterator = nextClass.getResampledGestures().iterator(); gesturesIterator.hasNext();) {
+					Vector<Point2D> gesturePoints = gesturesIterator.next();
+					currentScore = distance(inputPointsResampled, gesturePoints);
+					if (currentScore < minScore) {
+						minScore = currentScore;
+						recognized = nextClass;
+						bestTemplate = gesturePoints;
+					}
+				}
+			} else {
+				Vector<Point2D> gesturePoints = getTemplates().get(getClassesNames().indexOf(nextClass.getName()));
+				currentScore = distance(inputPointsResampled, gesturePoints);
+				if (currentScore < minScore) {
+					minScore = currentScore;
+					recognized = nextClass;
+					bestTemplate = gesturePoints;
+				}
 			}
-			cpt++;
 		}
-		
-		
-		
 		currentDistance = minScore;
-		if (currentDistance > maximumDistance) {
+		if (currentDistance > maximumDistance)
 			return null;
-		}
 		Vector<Point2D> bestTemplateCopy = new Vector<Point2D>();
 		for (Iterator<Point2D> iterator = bestTemplate.iterator(); iterator.hasNext();) {
 			Point2D next = iterator.next();
 			bestTemplateCopy.add(new Point2D.Double(next.getX(), next.getY()));
 		}
-		return new NamedGesture(classesNames.get(match), inputPointsResampledCopy, bestTemplateCopy);
+		// previously, there was a copy of inputPointsResampled instead
+		return new NamedGesture(recognized.getName(), inputPointsResampled, bestTemplateCopy);
 	}
 
 	/**
@@ -188,6 +360,38 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 */
+	public int addClass(String className) {
+		int index = super.addClass(className);
+		if(index == -1) return -1;
+		ResampledGestureClass gcr = new ResampledGestureClass(className);
+		classes.add(gcr);
+		return index;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void renameClass(String previousClassName, String newClassName) {
+		int index = classesNames.indexOf(previousClassName);
+		if(index == -1) return;
+		ResampledGestureClass gc = classes.get(index);
+		gc.setName(newClassName);
+		super.renameClass(previousClassName, newClassName);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void removeClass(String className) {
+		int index = classesNames.indexOf(className);
+		if(index == -1) return;
+		super.removeClass(className);
+		classes.remove(index);
+	}
+	
+	/**
 	 * Adds a class and set the template for this class.
 	 * @param className The name of the class to add
 	 * @param template The template for the class <code>className</code>
@@ -211,6 +415,10 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 				points.add(new Point2D.Double(in.readDouble(), in.readDouble()));
 			}
 			templates.add(points);
+			ResampledGestureClass gestureClass = new ResampledGestureClass(classesNames.get(i));
+			classes.add(gestureClass);
+			gestureClass.read(in);
+			
 		}
 		try {
 			maximumDistance = in.readDouble();
@@ -224,14 +432,20 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 
 	protected void write(DataOutputStream out) throws IOException {
 		out.writeInt(classesNames.size());
+//		System.out.println(classesNames.size());
 		for (int i = 0; i < classesNames.size(); i++) {
 			out.writeUTF(classesNames.get(i));
+//			System.out.println(classesNames.get(i));
 			out.writeInt(templates.get(i).size());
+//			System.out.println(templates.get(i).size());
 			for (Iterator<Point2D> iterator = templates.get(i).iterator(); iterator.hasNext();) {
 				Point2D next = iterator.next();
 				out.writeDouble(next.getX());
 				out.writeDouble(next.getY());
+//				System.out.println(next.getX());
+//				System.out.println(next.getY());
 			}
+			classes.get(i).write(out);
 		}
 		out.writeDouble(maximumDistance);
 		out.writeInt(minimumStrokeLength);
@@ -242,39 +456,36 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	 */
 	public Vector<Score> sortedClasses(Gesture g) {
 		Vector<Score> sortedScores = new Vector<Score>();
-
-		Vector<Point2D> inputPointsResampled = new Vector<Point2D>();
-		GestureUtils.resample(g.getPoints(), nbPoints, inputPointsResampled);
-		GestureUtils.scaleToSquare(inputPointsResampled, sizeScaleToSquare, inputPointsResampled);
-		GestureUtils.translateToOrigin(inputPointsResampled, inputPointsResampled);
+		Vector<Point2D> inputPointsResampled = normalize(g);
 
 		double score;
 		double minClassScore = 0;
-		for (int nc = 0; nc < classesNames.size(); nc++) {
+		for (int nc = 0; nc < classes.size(); nc++) {
 			minClassScore = Integer.MAX_VALUE;
-			Vector<Point2D> gesturePoints = templates.get(nc);
-			score = GestureUtils.pathDistance(inputPointsResampled, gesturePoints);
-			if (score < minClassScore)
-				minClassScore = score;
+			if(classes.get(nc).getResampledGestures().size() > 0) {
+				for (Iterator<Vector<Point2D>> gesturesIterator = classes.get(nc).getResampledGestures().iterator(); gesturesIterator.hasNext();) {
+					Vector<Point2D> gesturePoints = gesturesIterator.next();
+					score = distance(inputPointsResampled, gesturePoints);
+					if (score < minClassScore)
+						minClassScore = score;
+				}
+			} else {
+				Vector<Point2D> gesturePoints = getTemplates().get(nc);
+				score = distance(inputPointsResampled, gesturePoints);
+				if (score < minClassScore)
+					minClassScore = score;
+			}
 			if (nc == 0) {
-				sortedScores.add(new Score(classesNames.get(nc), minClassScore));
+				sortedScores.add(new Score(classes.get(nc).getName(), minClassScore));
 			} else {
 				int i = 0;
 				while (i < sortedScores.size() && sortedScores.get(i).getScore() < minClassScore)
 					i++;
-				sortedScores.add(i, new Score(classesNames.get(nc), minClassScore));
+				sortedScores.add(i, new Score(classes.get(nc).getName(), minClassScore));
 			}
 		}
 
 		return sortedScores;
-	}
-
-	public int getNbPoints() {
-		return nbPoints;
-	}
-
-	public double getSizeScaleToSquare() {
-		return sizeScaleToSquare;
 	}
 
 	/**
@@ -298,30 +509,21 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	/**
 	 * {@inheritDoc}
 	 */
-	public CPolyLine getRepresentative(String className) {
-		Vector<Point2D> template = getTemplate(className);
-		CPolyLine polyline = new CPolyLine(template.firstElement());
-		Iterator<Point2D> iterator = template.iterator();
-		iterator.next();
-		while(iterator.hasNext())
-			polyline.lineTo(iterator.next());
-		return polyline;
+	public void removeExample(Gesture gesture) {
+		for (Iterator<ResampledGestureClass> iterator = classes.iterator(); iterator.hasNext();) {
+			ResampledGestureClass next = iterator.next();
+			if(next != null) next.removeExample(gesture);
+		}
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public void removeExample(Gesture gesture)
-			throws UnsupportedOperationException {
-		throw new UnsupportedOperationException("Removing an example from a ShapeMatchingClassifier does not make sense.");
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public void addExample(String className, Gesture example)
-			throws UnsupportedOperationException {
-		throw new UnsupportedOperationException("Adding an example to a class in a ShapeMatchingClassifier does not make sense.");
+	public void addExample(String className, Gesture example) {
+		int index = classesNames.indexOf(className);
+		if(index == -1) return;
+		ResampledGestureClass gestureClass = classes.get(index);
+		if(gestureClass != null) gestureClass.addExample(example);
 	}
 
 	/**
@@ -329,9 +531,12 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	 */
 	public Vector<Gesture> getExamples(String className)
 			throws UnsupportedOperationException {
-		throw new UnsupportedOperationException("A class in a ShapeMatchingClassifier contains only one template which can be obtained using the method getTemplate(String).");
+		int index = classesNames.indexOf(className);
+		if(index == -1) return null;
+		ResampledGestureClass gc = classes.get(index);
+		return gc.getGestures();
 	}
-	
+
 	/**
 	 * The side size of the bounding box to which the gesture is scaled after having being resampled.
 	 * @param size The side size of the bounding box
@@ -356,14 +561,25 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		templates.add(index, newPoints);
 	}
 
+	/**
+	 * @return The maximum score threshold for recognition.
+	 */
 	public double getThreshold() {
 		return maximumDistance;
 	}
-	
+
+	/**
+	 * Sets a minimum score threshold for recognition. If the distance is
+	 * greater than this maximum distance, the gesture is not recognized (i.e.
+	 * method <code>classify</code> returns null.
+	 * 
+	 * @param maximumDistance
+	 *            The minimum score threshold for recognition.
+	 */
 	public void setThreshold(double maximumDistance) {
 		this.maximumDistance = maximumDistance;
 	}
-	
+
 	public int getMinimumStrokeLength() {
 		return minimumStrokeLength;
 	}
@@ -372,54 +588,27 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		this.minimumStrokeLength = minimumStrokeLength;
 	}
 	
-	/**
-	 * Creates a squared png image of a stroke given its command name. The stroke is colored in black and its starting point in red.
-	 * @param file The image file
-	 * @param command The name of the command activated by the stroke
-	 * @param sideSizeImage The size of image side
-	 * @param sizeStartingPoint The diameter of the stroke's starting point
-	 */
-	public void getPngImage(File file, String command, int sideSizeImage, int sizeStartingPoint) {
-		getPngImage(file, command, sideSizeImage, Color.BLACK, sizeStartingPoint, Color.RED);
+	public int getNbPoints() {
+		return nbPoints;
+	}
+
+	public double getSizeScaleToSquare() {
+		return sizeScaleToSquare;
 	}
 	
 	/**
-	 * Creates a squared png image of a stroke given its command name.
-	 * @param file The image file
-	 * @param command The name of the command activated by the stroke
-	 * @param sideSizeImage The size of image side
-	 * @param colorStroke The stroke color
-	 * @param sizeStartingPoint The diameter of the stroke's starting point
-	 * @param colorStartingPoint The color of the stroke's starting point
+	 * @return The distance of the last recognized gesture.
 	 */
-	public void getPngImage(File file, String command, int sideSizeImage, Color colorStroke, int sizeStartingPoint, Color colorStartingPoint) {
-		Vector<Point2D> stroke = getTemplate(command);
-		Canvas canvas = new Canvas(sideSizeImage, sideSizeImage);
-		CPolyLine polyline = GestureUtils.asPolyLine(stroke);
-		int maxSide = Math.max((int)(polyline.getMaxX() - polyline.getMinX()), (int)(polyline.getMaxY() - polyline.getMinY()));
-		canvas.addShape(polyline);
-		BufferedImage imageGesture = new BufferedImage(sideSizeImage, sideSizeImage, BufferedImage.TYPE_INT_ARGB);
-		double ds = (sideSizeImage - 10)/(double)maxSide;
-		polyline.setAntialiased(true).setFilled(false).setOutlinePaint(colorStroke);
-		Graphics g = imageGesture.getGraphics();
-		CRectangle bg = new CRectangle(0, 0, maxSide+9, maxSide+9);
-		canvas.addShape(bg);
-		bg.setFillPaint(Color.WHITE).setOutlined(false);
-		bg.paint(g);
-		polyline.setReferencePoint(0.5, 0.5).translateTo(sideSizeImage/2, sideSizeImage/2).scaleBy(ds);
-		polyline.fixReferenceShapeToCurrent();
-		polyline.paint(g);
-		CEllipse startPoint = new CEllipse(polyline.getStartX() - (sizeStartingPoint/2), 
-				polyline.getStartY() - (sizeStartingPoint/2), 
-				sizeStartingPoint, sizeStartingPoint);
-		canvas.addShape(startPoint);
-		startPoint.setFillPaint(colorStartingPoint).setOutlinePaint(colorStartingPoint).setPickable(false).setAntialiased(true);
-		startPoint.paint(g);
-		try {
-			ImageIO.write(imageGesture, "png", file);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public double getCurrentDistance() {
+		return currentDistance;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
+	public void reset() {
+		super.reset();
+		classes.clear();
+	}
+
 }

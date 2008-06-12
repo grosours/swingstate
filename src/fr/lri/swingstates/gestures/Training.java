@@ -522,11 +522,11 @@ public class Training {
 			}
 		});
 
-		SpinnerNumberModel modelDistanceDollar1 = new SpinnerNumberModel(new Integer((int) getDollar1Classifier().getMaximumDistance()), new Integer(0), new Integer(100), new Integer(1));
+		SpinnerNumberModel modelDistanceDollar1 = new SpinnerNumberModel(new Integer((int) getDollar1Classifier().getThreshold()), new Integer(0), new Integer(100), new Integer(1));
 		distanceDollar1 = new JSpinner(modelDistanceDollar1);
 		distanceDollar1.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
-				getDollar1Classifier().setMaximumDistance((Double) (((SpinnerNumberModel) distanceDollar1.getModel()).getNumber()));
+				getDollar1Classifier().setThreshold((Double) (((SpinnerNumberModel) distanceDollar1.getModel()).getNumber()));
 			}
 		});
 	}

@@ -938,5 +938,24 @@ public class RubineClassifier extends AbstractClassifier {
 		RubineGestureClass gc = classes.get(index);
 		return gc.getGestures();
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public Vector<Double> distance(String gesture1, String gesture2) {
+		Vector<Double> res = new Vector<Double>();
+		int index1 = classesNames.indexOf(gesture1);
+		int index2 = classesNames.indexOf(gesture2);
+		RubineGestureClass gc1 = classes.get(index1);
+		RubineGestureClass gc2 = classes.get(index2);
+		Iterator<Double> it1 = gc1.getAverage().iterator();
+		Iterator<Double> it2 = gc2.getAverage().iterator();
+		while(it1.hasNext()) {
+			double v1 = it1.next();
+			double v2 = it2.next();
+			res.add(v2 - v1);
+		}
+		return res;
+	}
 	
 }

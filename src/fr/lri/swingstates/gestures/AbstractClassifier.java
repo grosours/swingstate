@@ -5,16 +5,25 @@
 */
 package fr.lri.swingstates.gestures;
 
+import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Vector;
 
+import javax.imageio.ImageIO;
+
+import fr.lri.swingstates.canvas.CEllipse;
 import fr.lri.swingstates.canvas.CPolyLine;
+import fr.lri.swingstates.canvas.CRectangle;
+import fr.lri.swingstates.canvas.Canvas;
 
 /**
  * The base class for a gesture classifier.
@@ -48,7 +57,15 @@ public abstract class AbstractClassifier {
 	 * @return A representative polyline for the gesture class having name
 	 *         <code>className</code>.
 	 */
-	public abstract CPolyLine getRepresentative(String className);
+	public CPolyLine getRepresentative(String className) {
+		Vector<Point2D> template = getTemplate(className);
+		CPolyLine polyline = new CPolyLine(template.firstElement());
+		Iterator<Point2D> iterator = template.iterator();
+		iterator.next();
+		while(iterator.hasNext())
+			polyline.lineTo(iterator.next());
+		return polyline;
+	}
 
 	/**
 	 * Adds a class of gestures to this classifier.
@@ -192,4 +209,57 @@ public abstract class AbstractClassifier {
 	public ArrayList<Vector<Point2D>> getTemplates() {
 		return templates;
 	}
+	
+	/**
+	 * Creates a squared png image of a stroke given its command name. The stroke is colored in black and its starting point in red.
+	 * @param file The image file
+	 * @param command The name of the command activated by the stroke
+	 * @param sideSizeImage The size of image side
+	 * @param sizeStartingPoint The diameter of the stroke's starting point
+	 */
+	public void getPngImage(File file, String command, int sideSizeImage, int sizeStartingPoint) {
+		getPngImage(file, command, sideSizeImage, Color.BLACK, sizeStartingPoint, Color.RED);
+	}
+	
+	/**
+	 * Creates a squared png image of a stroke given its command name.
+	 * @param file The image file
+	 * @param command The name of the command activated by the stroke
+	 * @param sideSizeImage The size of image side
+	 * @param colorStroke The stroke color
+	 * @param sizeStartingPoint The diameter of the stroke's starting point
+	 * @param colorStartingPoint The color of the stroke's starting point
+	 */
+	public void getPngImage(File file, String command, int sideSizeImage, Color colorStroke, int sizeStartingPoint, Color colorStartingPoint) {
+		Vector<Point2D> stroke = getTemplate(command);
+		Canvas canvas = new Canvas(sideSizeImage, sideSizeImage);
+		CPolyLine polyline = GestureUtils.asPolyLine(stroke);
+		int maxSide = Math.max((int)(polyline.getMaxX() - polyline.getMinX()), (int)(polyline.getMaxY() - polyline.getMinY()));
+		canvas.addShape(polyline);
+		BufferedImage imageGesture = new BufferedImage(sideSizeImage, sideSizeImage, BufferedImage.TYPE_INT_ARGB);
+		double ds = (sideSizeImage - 10)/(double)maxSide;
+		polyline.setAntialiased(true).setFilled(false).setOutlinePaint(colorStroke);
+		Graphics g = imageGesture.getGraphics();
+		CRectangle bg = new CRectangle(0, 0, maxSide+9, maxSide+9);
+		canvas.addShape(bg);
+		bg.setFillPaint(Color.WHITE).setOutlined(false);
+		bg.paint(g);
+		polyline.setReferencePoint(0.5, 0.5).translateTo(sideSizeImage/2, sideSizeImage/2).scaleBy(ds);
+		polyline.fixReferenceShapeToCurrent();
+		polyline.paint(g);
+		CEllipse startPoint = new CEllipse(polyline.getStartX() - (sizeStartingPoint/2), 
+				polyline.getStartY() - (sizeStartingPoint/2), 
+				sizeStartingPoint, sizeStartingPoint);
+		canvas.addShape(startPoint);
+		startPoint.setFillPaint(colorStartingPoint).setOutlinePaint(colorStartingPoint).setPickable(false).setAntialiased(true);
+		startPoint.paint(g);
+		try {
+			ImageIO.write(imageGesture, "png", file);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public abstract Vector<Double> distance(String gesture1, String gesture2);
+	
 }
