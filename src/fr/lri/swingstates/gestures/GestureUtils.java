@@ -47,13 +47,18 @@ public class GestureUtils {
 		Vector<Point2D> dstPts = new Vector<Point2D>(n);
 
 		double segLength = pathLength(points) / (n - 1);
+		
 		double currentSegLength = 0;
+		double totalSegLength = 0;
 		Vector<Point2D> srcPts = new Vector<Point2D>(points);
-		dstPts.add((Point2D) srcPts.get(0).clone());
+		
+		dstPts.add(new Point2D.Double(srcPts.get(0).getX(), srcPts.get(0).getY()));
 		for (int i = 1; i < srcPts.size(); i++) {
 			Point2D pt1 = srcPts.get(i - 1);
 			Point2D pt2 = srcPts.get(i);
 			double d = pt1.distance(pt2);
+			if(d == 0) continue;
+			totalSegLength += d;
 			if ((currentSegLength + d) >= segLength) {
 				double qx = pt1.getX() + ((segLength - currentSegLength) / d) * (pt2.getX() - pt1.getX());
 				double qy = pt1.getY() + ((segLength - currentSegLength) / d) * (pt2.getY() - pt1.getY());
@@ -68,8 +73,9 @@ public class GestureUtils {
 		}
 		// sometimes we fall a rounding-error short of adding the last point, so
 		// add it if so
-		if (dstPts.size() == (n - 1)) {
-			dstPts.add((Point2D) srcPts.get(srcPts.size() - 1).clone());
+		while (dstPts.size() < n) {
+			dstPts.add(new Point2D.Double(srcPts.get(srcPts.size() - 1).getX(),
+					srcPts.get(srcPts.size() - 1).getY()));
 		}
 		newPoints.clear();
 		newPoints.addAll(dstPts);
@@ -151,7 +157,9 @@ public class GestureUtils {
 				ptDest = new Point2D.Double();
 				newPoints.add(i, ptDest);
 			}
+			
 			ptDest.setLocation(ptSrc.getX() * (size / maxSide), ptSrc.getY() * (size / maxSide));
+			if(Double.isNaN(ptDest.getX()) || Double.isNaN(ptDest.getY())) System.out.println("x: "+ptSrc.getX()+" - y: "+ptSrc.getY()+" - "+size+" - "+maxSide+" - "+bb);
 		}
 	}
 

@@ -85,7 +85,12 @@ public class GesturalInteraction extends CStateMachine {
 			public void action() {
 				armTimer(500, false);
 				gesture.addPoint(getPoint().getX(), getPoint().getY());
-				String gc = classifier.classify(gesture);
+				String gc = null;
+				try {
+					gc = classifier.classify(gesture);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 				if (gc != null) {
 					if (modeCommunicationMachine)
 						canvas.processEvent(gc, pInit);

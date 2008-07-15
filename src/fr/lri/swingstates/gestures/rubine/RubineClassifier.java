@@ -326,6 +326,7 @@ public class RubineClassifier extends AbstractClassifier {
 		cnst.remove(index);
 		super.removeClass(className);
 		compiled = false;
+		fireClassRemoved(className);
 	}
 	
 	/**
@@ -454,7 +455,7 @@ public class RubineClassifier extends AbstractClassifier {
 	 *            The gesture to recognize
 	 * @return The class of gestures that best fit to g.
 	 */
-	public String classify(Gesture g) {
+	public String classify(Gesture g) throws Exception {
 		compile();
 
 		Vector<Double> fv = getFeatures(g);
@@ -483,7 +484,11 @@ public class RubineClassifier extends AbstractClassifier {
 //		currentProbability = 1.0 / denom;
 
 		// calculate distance to mean of chosen class
-		currentDistance = mahalanobisDistance(fv, maxclass.getAverage(), invAvgCov);
+		try {
+			currentDistance = mahalanobisDistance(fv, maxclass.getAverage(), invAvgCov);
+		} catch(Exception e) {
+			throw new Exception("A Rubine classifier must have at least 2 classes and 2 examples per classes");
+		}
 
 //		System.out.println("currentProbability: " + currentProbability);
 //		System.out.println("probabilityThreshold: " + probabilityThreshold);
@@ -508,6 +513,7 @@ public class RubineClassifier extends AbstractClassifier {
 		weights.add(new Vector<Double>(NAME_FEATURES.length));
 		cnst.add(0.0);
 		compiled = false;
+		fireClassAdded(className);
 		return index;
 	}
 
@@ -555,21 +561,35 @@ public class RubineClassifier extends AbstractClassifier {
 	}
 
 	protected void write(DataOutputStream out) throws IOException {
-		out.writeInt(classes.size());
-		for (int i = 0; i < classes.size(); i++)
+		out.writeInt(classesNames.size());
+		for (int i = 0; i < classesNames.size(); i++) {
+			out.writeUTF(classesNames.get(i));
+			out.writeInt(templates.get(i).size());
+			for (Iterator<Point2D> iterator = templates.get(i).iterator(); iterator.hasNext();) {
+				Point2D next = iterator.next();
+				out.writeDouble(next.getX());
+				out.writeDouble(next.getY());
+			}
 			classes.get(i).write(out);
+		}
+//		out.writeDouble(maximumDistance);
+//		out.writeInt(minimumStrokeLength);
 	}
 	
 	protected Object read(DataInputStream in) throws IOException {
 		int nClasses = in.readInt();
 		for (int i = 0; i < nClasses; i++) {
-			RubineGestureClass c = new RubineGestureClass();
-			c.read(in);
-			classes.add(c);
-			classesNames.add(c.getName());
-			templates.add(null);
+			classesNames.add(in.readUTF());
+			int nbPoints = in.readInt();
+			Vector<Point2D> points = new Vector<Point2D>();
+			for (int j = 0; j < nbPoints; j++) {
+				points.add(new Point2D.Double(in.readDouble(), in.readDouble()));
+			}
+			templates.add(points);
+			RubineGestureClass gestureClass = new RubineGestureClass();
+			classes.add(gestureClass);
+			gestureClass.read(in);
 		}
-
 		return this;
 	}
 
@@ -900,10 +920,13 @@ public class RubineClassifier extends AbstractClassifier {
 	/**
 	 * {@inheritDoc}
 	 */
-	public void removeExample(Gesture gesture) {
+	public void removeExample(Gesture example) {
 		for (Iterator<RubineGestureClass> iterator = classes.iterator(); iterator.hasNext();) {
 			RubineGestureClass next = iterator.next();
-			if(next != null) next.removeExample(gesture);
+			if(next != null) {
+				next.removeExample(example);
+				fireExampleRemoved(next.getName(), example);
+			}
 		}
 	}
 	
@@ -914,7 +937,10 @@ public class RubineClassifier extends AbstractClassifier {
 		int index = classesNames.indexOf(className);
 		if(index == -1) return;
 		RubineGestureClass gestureClass = classes.get(index);
-		if(gestureClass != null) gestureClass.addExample(example);
+		if(gestureClass != null) {
+			gestureClass.addExample(example);
+			fireExampleAdded(className, example);
+		}
 	}
 	
 	/**

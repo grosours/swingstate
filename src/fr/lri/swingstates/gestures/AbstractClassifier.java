@@ -16,14 +16,18 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Vector;
 
 import javax.imageio.ImageIO;
+import javax.swing.event.EventListenerList;
 
 import fr.lri.swingstates.canvas.CEllipse;
 import fr.lri.swingstates.canvas.CPolyLine;
 import fr.lri.swingstates.canvas.CRectangle;
 import fr.lri.swingstates.canvas.Canvas;
+import fr.lri.swingstates.debug.StateMachineEvent;
+import fr.lri.swingstates.debug.StateMachineEventListener;
 
 /**
  * The base class for a gesture classifier.
@@ -39,6 +43,59 @@ public abstract class AbstractClassifier {
 
 	protected abstract void write(DataOutputStream out) throws IOException;
 
+	private EventListenerList classifierListeners = null;
+
+	public synchronized void addClassifierListener(ClassifierListener l) {
+		if(l == null) return;
+		if(classifierListeners == null) classifierListeners = new EventListenerList();
+		classifierListeners.add(ClassifierListener.class, l);
+	}
+	
+	public synchronized void removeClassifierListener(ClassifierListener l) {
+		if(l == null || classifierListeners == null) return;
+		classifierListeners.remove(ClassifierListener.class, l);
+	}
+	
+	public void fireClassAdded(String className) {
+		if(classifierListeners == null) return;
+		Object[] tabListeners = classifierListeners.getListenerList();
+	     for (int i = tabListeners.length-2; i>=0; i-=2)
+	         if (tabListeners[i]==ClassifierListener.class)
+	             ((ClassifierListener)tabListeners[i+1]).classAdded(className);
+	}
+	
+	public void fireClassRemoved(String className) {
+		if(classifierListeners == null) return;
+		Object[] tabListeners = classifierListeners.getListenerList();
+	     for (int i = tabListeners.length-2; i>=0; i-=2)
+	         if (tabListeners[i]==ClassifierListener.class)
+	             ((ClassifierListener)tabListeners[i+1]).classRemoved(className);
+	}
+	
+	public void fireExampleAdded(String className, Gesture example) {
+		if(classifierListeners == null) return;
+		Object[] tabListeners = classifierListeners.getListenerList();
+	     for (int i = tabListeners.length-2; i>=0; i-=2)
+	         if (tabListeners[i]==ClassifierListener.class)
+	             ((ClassifierListener)tabListeners[i+1]).exampleAdded(className, example);
+	}
+	
+	public void fireExampleRemoved(String className, Gesture example) {
+		if(classifierListeners == null) return;
+		Object[] tabListeners = classifierListeners.getListenerList();
+	     for (int i = tabListeners.length-2; i>=0; i-=2)
+	         if (tabListeners[i]==ClassifierListener.class)
+	             ((ClassifierListener)tabListeners[i+1]).exampleRemoved(className, example);
+	}
+	
+	public void fireTemplateSet(String className, Vector<Point2D> template) {
+		if(classifierListeners == null) return;
+		Object[] tabListeners = classifierListeners.getListenerList();
+	     for (int i = tabListeners.length-2; i>=0; i-=2)
+	         if (tabListeners[i]==ClassifierListener.class)
+	             ((ClassifierListener)tabListeners[i+1]).templateSet(className, template);
+	}
+	
 	/**
 	 * Removes a gesture example from this classifier.
 	 * 
@@ -132,7 +189,7 @@ public abstract class AbstractClassifier {
 	 *            The gesture to recognize
 	 * @return The name of the class of gestures that best fit to g.
 	 */
-	public abstract String classify(Gesture g);
+	public abstract String classify(Gesture g) throws Exception;
 
 	/**
 	 * Computes a sorted list of classes contained in this recognizer from the
@@ -183,6 +240,7 @@ public abstract class AbstractClassifier {
 		if(index == -1) return;
 		templates.remove(index);
 		templates.add(index, template);
+		fireTemplateSet(className, template);
 	}
 
 	/**

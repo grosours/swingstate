@@ -786,7 +786,11 @@ public class Training {
 		
 		if(dollar1Enable.isSelected()) {
 			String textResult = "$1 classifier has recognized: \n";
-			textResult += "    " + classifiers.get(INDEX_DOLLAR1).classify(gest);
+			try {
+				textResult += "    " + classifiers.get(INDEX_DOLLAR1).classify(gest);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			textResult += "\n" + "Distance: " + getDollar1Classifier().getCurrentDistance();
 			String sortedClasses = "\n\nClasses order (closest first): \n";
 			Vector<Score> sorted = getDollar1Classifier().sortedClasses(gest);

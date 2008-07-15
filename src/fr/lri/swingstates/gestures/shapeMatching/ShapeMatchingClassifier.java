@@ -83,7 +83,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		}
 
 		/**
-		 * @return The vector of gesture examples as resampled, rotated and scaled.
+		 * @return The vector of gesture examples as resampled and scaled.
 		 * @see Dollar1GestureClass#addExample(Gesture)
 		 */
 		public Vector<Vector<Point2D>> getResampledGestures() {
@@ -111,67 +111,6 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 			return average;
 		}
 		
-		public void write(DataOutputStream out) throws IOException {
-			out.writeUTF(name);
-//			System.out.println("* "+name);
-			out.writeInt(gestures.size());
-//			System.out.println("* "+gestures.size());
-			for (Iterator<Gesture> iterator = gestures.iterator(); iterator.hasNext();) {
-				iterator.next().write(out);
-//				System.out.println("* gesture");
-			}
-			out.writeInt(resampledGestures.size());
-//			System.out.println("* "+resampledGestures.size());
-			for (Iterator<Vector<Point2D>> iterator = resampledGestures.iterator(); iterator.hasNext();) {
-				Vector<Point2D> resampledGesture = iterator.next();
-				out.writeInt(resampledGesture.size());
-//				System.out.println("* "+resampledGesture.size());
-				for (Iterator<Point2D> it = resampledGesture.iterator(); it.hasNext();) {
-					Point2D pt = it.next();
-					out.writeDouble(pt.getX());
-					out.writeDouble(pt.getY());
-//					System.out.println("* "+pt.getX());
-//					System.out.println("* "+pt.getY());
-				}
-			}
-			
-		}
-
-		/**
-		 * Reads the definition of this gesture class from an input stream.
-		 * @param in The input stream
-		 * @return This gesture class initialized from input stream <code>in</code>.
-		 * @throws IOException if a reading error occurs.
-		 */
-		public Object read(DataInputStream in) throws IOException {
-			name = in.readUTF();
-			int nExamples = in.readInt();
-			gestures = new Vector<Gesture>();
-			for (int i = 0; i < nExamples; i++) {
-				Gesture g = new Gesture();
-//				System.out.println("* gesture");
-				g.read(in);
-				addExample(g);
-			}
-			int nResampledGestures = in.readInt();
-//			System.out.println("* "+nResampledGestures);
-			resampledGestures = new Vector<Vector<Point2D>>();
-			for(int i = 0; i < nResampledGestures; i++) {
-				Vector<Point2D> resampledGesture = new Vector<Point2D>();
-				int nPoints = in.readInt();
-//				System.out.println("* "+nPoints);
-				for(int j = 0; j < nPoints; j++) {
-					double x = in.readDouble();
-					double y = in.readDouble();
-//					System.out.println("* "+x);
-//					System.out.println("* "+y);
-					Point2D pt = new Point2D.Double(x, y);
-					resampledGesture.add(pt);
-				}
-			}
-			return this;
-		}
-
 	}
 
 	protected ArrayList<ResampledGestureClass>    classes = new ArrayList<ResampledGestureClass>();
@@ -367,6 +306,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		if(index == -1) return -1;
 		ResampledGestureClass gcr = new ResampledGestureClass(className);
 		classes.add(gcr);
+		fireClassAdded(className);
 		return index;
 	}
 	
@@ -389,6 +329,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		if(index == -1) return;
 		super.removeClass(className);
 		classes.remove(index);
+		fireClassRemoved(className);
 	}
 	
 	/**
@@ -420,35 +361,28 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 			gestureClass.read(in);
 			
 		}
-		try {
-			maximumDistance = in.readDouble();
-			minimumStrokeLength = in.readInt();
-		} catch(IOException ioe) {
-			maximumDistance = 30;
-			minimumStrokeLength = 20;
-		}
+//		try {
+//			maximumDistance = in.readDouble();
+//			minimumStrokeLength = in.readInt();
+//		} catch(IOException ioe) {
+//			maximumDistance = 30;
+//			minimumStrokeLength = 20;
+//		}
 		return this;
 	}
 
 	protected void write(DataOutputStream out) throws IOException {
 		out.writeInt(classesNames.size());
-//		System.out.println(classesNames.size());
 		for (int i = 0; i < classesNames.size(); i++) {
 			out.writeUTF(classesNames.get(i));
-//			System.out.println(classesNames.get(i));
 			out.writeInt(templates.get(i).size());
-//			System.out.println(templates.get(i).size());
 			for (Iterator<Point2D> iterator = templates.get(i).iterator(); iterator.hasNext();) {
 				Point2D next = iterator.next();
 				out.writeDouble(next.getX());
 				out.writeDouble(next.getY());
-//				System.out.println(next.getX());
-//				System.out.println(next.getY());
 			}
 			classes.get(i).write(out);
 		}
-		out.writeDouble(maximumDistance);
-		out.writeInt(minimumStrokeLength);
 	}
 
 	/**
@@ -509,10 +443,13 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	/**
 	 * {@inheritDoc}
 	 */
-	public void removeExample(Gesture gesture) {
+	public void removeExample(Gesture example) {
 		for (Iterator<ResampledGestureClass> iterator = classes.iterator(); iterator.hasNext();) {
 			ResampledGestureClass next = iterator.next();
-			if(next != null) next.removeExample(gesture);
+			if(next != null) {
+				next.removeExample(example);
+				fireExampleRemoved(next.getName(), example);
+			}
 		}
 	}
 
@@ -523,7 +460,10 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		int index = classesNames.indexOf(className);
 		if(index == -1) return;
 		ResampledGestureClass gestureClass = classes.get(index);
-		if(gestureClass != null) gestureClass.addExample(example);
+		if(gestureClass != null) {
+			gestureClass.addExample(example);
+			fireExampleAdded(className, example);
+		}
 	}
 
 	/**
@@ -559,6 +499,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		GestureUtils.scaleToSquare(newPoints, getSizeScaleToSquare(), newPoints);
 		GestureUtils.translateToOrigin(newPoints, newPoints);
 		templates.add(index, newPoints);
+		fireTemplateSet(className, newPoints);
 	}
 
 	/**

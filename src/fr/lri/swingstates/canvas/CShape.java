@@ -2,7 +2,7 @@
  *   Authors: Caroline Appert (caroline.appert@lri.fr)
  *   Copyright (c) Universite Paris-Sud XI, 2007. All Rights Reserved
  *   Licensed under the GNU LGPL. For full terms see the file COPYING.
-*/
+ */
 package fr.lri.swingstates.canvas;
 
 import java.awt.AlphaComposite;
@@ -91,7 +91,7 @@ import fr.lri.swingstates.sm.GraphicalShape;
  */
 
 public class CShape implements Cloneable, CElement
-// +++
+//+++
 , GraphicalShape
 {
 
@@ -241,19 +241,22 @@ public class CShape implements Cloneable, CElement
 				((CShape) children.getFirst()).setParent(null);
 		}
 
-		// remove tags
-		List<CTag> canvasTags = canvas.allCanvasTags;
-		synchronized(canvasTags) {
-			for (Iterator<CTag> i = canvasTags.iterator(); i.hasNext();) {
-				CTag next = i.next();
-				if (next instanceof CExtensionalTag) {
-					CExtensionalTag extTag = (CExtensionalTag) next;
-					if (extTag.tagsShape(this))
-						this.removeTag(extTag);
+
+//		if(canvas != null) {		
+			// remove tags
+			List<CTag> canvasTags = canvas.allCanvasTags;
+			synchronized(canvasTags) {
+				for (Iterator<CTag> i = canvasTags.iterator(); i.hasNext();) {
+					CTag next = i.next();
+					if (next instanceof CExtensionalTag) {
+						CExtensionalTag extTag = (CExtensionalTag) next;
+						if (extTag.tagsShape(this))
+							this.removeTag(extTag);
+					}
 				}
 			}
-		}
-
+//		}
+		
 		// detach from clip
 		setClip(null);
 		// remove ghost
@@ -362,7 +365,7 @@ public class CShape implements Cloneable, CElement
 		repaint();
 		return this;
 	}
-	
+
 	/**
 	 * Sets the <code>transparencyFill</code> of this shape, which applies to
 	 * the interior.
@@ -1009,13 +1012,13 @@ public class CShape implements Cloneable, CElement
 		AffineTransform xform = getAbsTransform();
 		Point2D pt = new Point2D.Double();
 //		try {
-//			xform.inverseTransform(new Point2D.Double(x, y), pt);
-//			translateBy(pt.getX() - (bounds.getX() + rx * bounds.getWidth()), pt.getY() - (bounds.getY() + ry * bounds.getHeight()));
-			xform.transform(new Point2D.Double(bounds.getX() + rx * bounds.getWidth(), bounds.getY() + ry * bounds.getHeight()), pt);
-			translateBy(x - pt.getX(), y - pt.getY());
-			changedTransform();
+//		xform.inverseTransform(new Point2D.Double(x, y), pt);
+//		translateBy(pt.getX() - (bounds.getX() + rx * bounds.getWidth()), pt.getY() - (bounds.getY() + ry * bounds.getHeight()));
+		xform.transform(new Point2D.Double(bounds.getX() + rx * bounds.getWidth(), bounds.getY() + ry * bounds.getHeight()), pt);
+		translateBy(x - pt.getX(), y - pt.getY());
+		changedTransform();
 //		} catch (NoninvertibleTransformException e) {
-//			return this;
+//		return this;
 //		}
 		return this;
 	}
@@ -1570,7 +1573,7 @@ public class CShape implements Cloneable, CElement
 	protected Shape getAbsShape() {
 		return getAbsTransform().createTransformedShape(shape);
 	}
-	
+
 	/**
 	 * This method can be useful before changing the parent of a shape while keeping 
 	 * its transformation that can be inherited from its current parent.
@@ -2022,7 +2025,7 @@ public class CShape implements Cloneable, CElement
 		copyTo(sms);
 		return sms;
 	}
-	
+
 	/**
 	 * Creates a new copy of this shape and returns it.
 	 * The tags of this shape are added to the copy.
@@ -2233,7 +2236,7 @@ public class CShape implements Cloneable, CElement
 		return this;
 	}
 
-	
+
 	// +++
 	public boolean isPicked(Point2D location) {
 		return (isPickable()

@@ -896,7 +896,7 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 			taggedShapes.add(shapes.nextShape());
 		for (Iterator<Object> i = taggedShapes.iterator(); i.hasNext();)
 			((CShape) i.next()).prepareToRemove();
-		displayOrder.removeAll(shapes.getCollection());
+		displayOrder.removeAll(taggedShapes);
 		repaint();
 		return this;
 	}
