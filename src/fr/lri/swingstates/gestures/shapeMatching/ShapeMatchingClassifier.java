@@ -123,7 +123,6 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	private double currentDistance = -1;
 	private double maximumDistance = 30;
 	private double sizeScaleToSquare = 100;
-	protected int  minimumStrokeLength = 20;
 
 	/**
 	 * {@inheritDoc}
@@ -361,13 +360,15 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 			gestureClass.read(in);
 			
 		}
-//		try {
-//			maximumDistance = in.readDouble();
-//			minimumStrokeLength = in.readInt();
-//		} catch(IOException ioe) {
-//			maximumDistance = 30;
-//			minimumStrokeLength = 20;
-//		}
+		try {
+			String s = in.readUTF();
+			if(s.compareTo("maximumDistance") == 0) maximumDistance = in.readDouble();
+			s = in.readUTF();
+			if(s.compareTo("minimumStrokeLength") == 0) minimumStrokeLength = in.readInt();
+		} catch(IOException ioe) {
+			maximumDistance = 30;
+			minimumStrokeLength = 20;
+		}
 		return this;
 	}
 
@@ -383,6 +384,10 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 			}
 			classes.get(i).write(out);
 		}
+		out.writeUTF("maximumDistance");
+		out.writeDouble(maximumDistance);
+		out.writeUTF("minimumStrokeLength");
+		out.writeInt(minimumStrokeLength);
 	}
 
 	/**
@@ -521,14 +526,6 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		this.maximumDistance = maximumDistance;
 	}
 
-	public int getMinimumStrokeLength() {
-		return minimumStrokeLength;
-	}
-
-	public void setMinimumStrokeLength(int minimumStrokeLength) {
-		this.minimumStrokeLength = minimumStrokeLength;
-	}
-	
 	public int getNbPoints() {
 		return nbPoints;
 	}

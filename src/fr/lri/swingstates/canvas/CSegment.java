@@ -58,6 +58,20 @@ public class CSegment extends CRectangularShape {
 	}
 	
 	/**
+	 * Sets the ending points of this segment.
+	 * @param x1 x-coordinate of first point.
+	 * @param y1 y-coordinate of first point.
+	 * @param x2 x-coordinate of second point.
+	 * @param y2 y-coordinate of second point.
+	 * @return this segment
+	 */
+	public CSegment setPoints (double x1, double y1, double x2, double y2) {
+		((Line2D)shape).setLine(x1, y1, x2, y2);
+		repaint();
+		return this;
+	}
+	
+	/**
 	 * Creates a new copy of this shape and returns it.
 	 * @return the copy.
 	 */

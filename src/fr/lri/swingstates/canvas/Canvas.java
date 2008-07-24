@@ -603,27 +603,27 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 			// that must reach potential CWidget and CDynamicWidget even if the
 			// machine does not contain *OnShape or *OnTag transitions. Underlying
 			// widgets must get keyboard focus that is acquired by mouse presses.
-			updatePicker(eventPicker);
+			updatePicker(eventPicker, event.getModifiersEx());
 			processModifiedEvent(eventPicker, event);
 			return;
 		case MouseEvent.MOUSE_RELEASED:
 			if (hasTransitionOfClass(ReleaseOnShape.class)
 					|| hasTransitionOfClass(ReleaseOnTag.class)) {
-				updatePicker(eventPicker);
+				updatePicker(eventPicker, event.getModifiersEx());
 			}
 			processModifiedEvent(eventPicker, event);
 			return;
 		case MouseEvent.MOUSE_CLICKED:
 			if (hasTransitionOfClass(ClickOnShape.class)
 					|| hasTransitionOfClass(ClickOnTag.class)) {
-				updatePicker(eventPicker);
+				updatePicker(eventPicker, event.getModifiersEx());
 			}
 			processModifiedEvent(eventPicker, event);
 			return;
 		case MouseEvent.MOUSE_WHEEL:
 			if (hasTransitionOfClass(WheelOnShape.class)
 					|| hasTransitionOfClass(WheelOnTag.class)) {
-				updatePicker(eventPicker);
+				updatePicker(eventPicker, event.getModifiersEx());
 			}
 			processModifiedEvent(eventPicker, event);
 			return;
@@ -634,7 +634,7 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 					|| hasTransitionOfClass(LeaveOnTag.class)
 					|| hasTransitionOfClass(DragOnShape.class)
 					|| hasTransitionOfClass(DragOnTag.class)) {
-				updatePicker(eventPicker);
+				updatePicker(eventPicker, event.getModifiersEx());
 			}
 			processModifiedEvent(eventPicker, event);
 			return;
@@ -645,7 +645,7 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 					|| hasTransitionOfClass(LeaveOnTag.class)
 					|| hasTransitionOfClass(MoveOnShape.class)
 					|| hasTransitionOfClass(MoveOnTag.class)) {
-				updatePicker(eventPicker);
+				updatePicker(eventPicker, event.getModifiersEx());
 			}
 			processModifiedEvent(eventPicker, event);
 			return;
@@ -654,7 +654,7 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 		}
 	}
 
-	private void updatePicker(Picker movedPicker) {
+	private void updatePicker(Picker movedPicker, int modifiersEx) {
 		int index = pickers.indexOf(movedPicker);
 		CShape newPicked = pick(movedPicker.getLocation());
 		CShape previousPicked = pickedShapes.remove(index);
@@ -663,14 +663,14 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 			long time = System.currentTimeMillis();
 			if (previousPicked != null) {
 				dispatchEvent(new PickerCEvent(this, previousPicked,
-						movedPicker, MouseEvent.MOUSE_EXITED, time, 0, (int) movedPicker
+						movedPicker, MouseEvent.MOUSE_EXITED, time, modifiersEx, (int) movedPicker
 						.getLocation().getX(), (int) movedPicker
 						.getLocation().getY(), 0, false));
 			}
 			if (newPicked != null) {
 				dispatchEvent(new PickerCEvent(this, newPicked, movedPicker,
 						MouseEvent.MOUSE_ENTERED, time,
-						0, (int) movedPicker.getLocation().getX(),
+						modifiersEx, (int) movedPicker.getLocation().getX(),
 						(int) movedPicker.getLocation().getY(), 0, false));
 			}
 		}
@@ -679,7 +679,7 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 	private void updatePickers(boolean fire) {
 		for (Iterator<Picker> i = pickers.iterator(); i.hasNext();) {
 			Picker movedPicker = i.next();
-			updatePicker(movedPicker);
+			updatePicker(movedPicker, 0);
 		}
 	}
 

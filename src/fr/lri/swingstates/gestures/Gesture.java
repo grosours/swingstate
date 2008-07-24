@@ -179,4 +179,18 @@ public class Gesture {
 	public Point2D getMax() {
 		return max;
 	}
+	
+	/**
+	 * @return The width of this gesture's bounding box
+	 */
+	public double getWidth() {
+		return getMax().getX() - getMin().getX();
+	}
+	
+	/**
+	 * @return The height of this gesture's bounding box
+	 */
+	public double getHeight() {
+		return getMax().getY() - getMin().getY();
+	}
 }

@@ -36,6 +36,8 @@ import fr.lri.swingstates.debug.StateMachineEventListener;
  */
 public abstract class AbstractClassifier {
 
+	protected int  minimumStrokeLength = 20;
+	
 	protected ArrayList<String>          classesNames = new ArrayList<String>();
 	protected ArrayList<Vector<Point2D>> templates = new ArrayList<Vector<Point2D>>();
 
@@ -320,4 +322,11 @@ public abstract class AbstractClassifier {
 	
 	public abstract Vector<Double> distance(String gesture1, String gesture2);
 	
+	public int getMinimumStrokeLength() {
+		return minimumStrokeLength;
+	}
+
+	public void setMinimumStrokeLength(int minimumStrokeLength) {
+		this.minimumStrokeLength = minimumStrokeLength;
+	}
 }

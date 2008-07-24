@@ -1895,6 +1895,21 @@ public class CShape implements Cloneable, CElement
 			return false;
 		return hasTag(canvas.getTag(t));
 	}
+	
+	/**
+	 * @return The list of extensional tags that tag this shape, null if this shape is not attached to a canvas.
+	 */
+	public LinkedList<CExtensionalTag> getTags() {
+		if(canvas == null) return null;
+		LinkedList<CExtensionalTag> tags = new LinkedList<CExtensionalTag>();
+		for(Iterator<CTag> it = canvas.allCanvasTags.iterator(); it.hasNext(); ) {
+			CTag next = it.next();
+			if(next instanceof CExtensionalTag)
+				if(hasTag(next))
+					tags.add((CExtensionalTag)next);
+		}
+		return tags;
+	}
 
 	/**
 	 * Removes a tag from this shape only if the tag is a

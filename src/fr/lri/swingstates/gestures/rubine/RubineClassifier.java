@@ -456,6 +456,8 @@ public class RubineClassifier extends AbstractClassifier {
 	 * @return The class of gestures that best fit to g.
 	 */
 	public String classify(Gesture g) throws Exception {
+		if(GestureUtils.pathLength(g.getPoints()) < minimumStrokeLength) return null;
+
 		compile();
 
 		Vector<Double> fv = getFeatures(g);
@@ -516,6 +518,18 @@ public class RubineClassifier extends AbstractClassifier {
 		fireClassAdded(className);
 		return index;
 	}
+	
+	public Vector<Double> getWeights(String className) {
+		compile();
+		int index = -1;
+		for (int i = 0; i < getClassesNames().size(); i++) {
+			String clName = getClassesNames().get(i);
+			if(clName.compareTo(className) == 0)
+				index = i;
+		}
+		if(index == -1) return null;
+		return weights.get(index);
+	}
 
 	/**
 	 * Computes the vector of features for a given class of gestures.
@@ -572,8 +586,10 @@ public class RubineClassifier extends AbstractClassifier {
 			}
 			classes.get(i).write(out);
 		}
-//		out.writeDouble(maximumDistance);
-//		out.writeInt(minimumStrokeLength);
+		out.writeUTF("mahalanobisThreshold");
+		out.writeInt(mahalanobisThreshold);
+		out.writeUTF("minimumStrokeLength");
+		out.writeInt(minimumStrokeLength);
 	}
 	
 	protected Object read(DataInputStream in) throws IOException {
@@ -590,6 +606,16 @@ public class RubineClassifier extends AbstractClassifier {
 			classes.add(gestureClass);
 			gestureClass.read(in);
 		}
+		try {
+			String s = in.readUTF();
+			if(s.compareTo("mahalanobisThreshold") == 0) mahalanobisThreshold = in.readInt();
+			s = in.readUTF();
+			if(s.compareTo("minimumStrokeLength") == 0) minimumStrokeLength = in.readInt();
+		} catch(IOException ioe) {
+			mahalanobisThreshold = 1000;
+			minimumStrokeLength = 20;
+		}
+		
 		return this;
 	}
 
@@ -779,8 +805,14 @@ public class RubineClassifier extends AbstractClassifier {
 
 				int indexPrevious = g.getPoints().indexOf(previous);
 				double lasttime = g.getPointTimes().get(indexPrevious);
-				double v = dist / (g.getPointTimes().get(g.getPointTimes().size() - 1) - lasttime);
-				if (g.getPointTimes().get(g.getPointTimes().size() - 1) > lasttime && v > maxSpeed)
+//				double v = dist / (g.getPointTimes().get(g.getPointTimes().size() - 1) - lasttime);
+//				if (g.getPointTimes().get(g.getPointTimes().size() - 1) > lasttime && v > maxSpeed)
+//					maxSpeed = v;
+				
+				int indexCurrent = g.getPoints().indexOf(next);
+				double currentTime = g.getPointTimes().get(indexCurrent);
+				double v = dist / (currentTime - lasttime);
+				if (v > maxSpeed)
 					maxSpeed = v;
 			}
 
