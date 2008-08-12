@@ -1423,8 +1423,10 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 	 */
 	public CElement setParent(CShape parent) {
 		synchronized(displayOrder) {
-			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
-				i.next().setParent(parent);
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();) {
+				CShape next = i.next();
+				next.setParent(parent);
+			}
 		}
 		return this;
 	}
@@ -1663,6 +1665,18 @@ MouseMotionListener, MouseWheelListener, KeyListener, CElement {
 		return this;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public CElement fixReferenceShapeToCurrent() { 
+		synchronized (displayOrder) {
+			for (Iterator<CShape> i = displayOrder.iterator(); i.hasNext();)
+				i.next().fixReferenceShapeToCurrent();
+		}
+		return this;
+	}
+	
+	
 	/**
 	 * {@inheritDoc}
 	 */

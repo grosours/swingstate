@@ -27,6 +27,8 @@ import fr.lri.swingstates.animations.Animation;
  */
 public interface CElement {
 	
+	CElement fixReferenceShapeToCurrent();
+	
 	/**
 	 * Attaches a state machine to this <code>CElement</code> to describe its behavior.
 	 * @param sm The State machine that describes the behavior of this <code>CElement</code>. 

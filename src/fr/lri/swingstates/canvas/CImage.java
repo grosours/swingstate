@@ -20,6 +20,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
 
@@ -133,6 +135,8 @@ public class CImage extends CShape {
 				xform.preConcatenate (s.transform);
 				s = s.parent;
 			}
+			
+			
 			g2d.transform(xform);
 			Rectangle2D bounds = shape.getBounds2D();
 			double dx = bounds.getWidth()*rx;
@@ -189,5 +193,5 @@ public class CImage extends CShape {
 		copyTo(sms);
 		return sms;
 	}
-
+	
 }

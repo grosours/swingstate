@@ -39,7 +39,7 @@ import fr.lri.swingstates.gestures.Score;
  */
 public class ShapeMatchingClassifier extends AbstractClassifier {
 
-	class ResampledGestureClass extends GestureClass {
+	protected class ResampledGestureClass extends GestureClass {
 
 		private Vector<Vector<Point2D>> resampledGestures = new Vector<Vector<Point2D>>();
 
@@ -124,13 +124,52 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	private double maximumDistance = 30;
 	private double sizeScaleToSquare = 100;
 
+//	private Vector<Vector<Double>> distances = new Vector<Vector<Double>>();
+	
+	public ShapeMatchingClassifier() {
+		super();
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 */
-	public Vector<Double> distance(String gesture1, String gesture2) {
-		Vector<Double> res = new Vector<Double>();
-		res.add(GestureUtils.pathDistance(getTemplate(gesture1), getTemplate(gesture2)));
-		return res;
+	public double distance(String gesture1, String gesture2) {
+		int index1 = classesNames.indexOf(gesture1);
+		int index2 = classesNames.indexOf(gesture2);
+		
+		if(!Double.isNaN(distances[index1][index2])) {
+			return distances[index1][index2];
+		}
+		
+		Vector<Point2D> template1 = getTemplate(gesture1);
+		Vector<Point2D> template2 = getTemplate(gesture2);
+		
+		double minDis = distance(template1, template2);
+		ResampledGestureClass gc1 = classes.get(index1);
+		Vector<Vector<Point2D>> examples1 = gc1.getResampledGestures();
+		for (Iterator<Vector<Point2D>> iterator = examples1.iterator(); iterator.hasNext();) {
+			Vector<Point2D> ex1  = iterator.next();
+			double dis = distance(ex1, template2);
+			if(dis < minDis) {
+				minDis = dis;
+			}
+		}
+		distances[index1][index2] = minDis;
+		
+		minDis = distance(template2, template1);
+		ResampledGestureClass gc2 = classes.get(index2);
+		Vector<Vector<Point2D>> examples2 = gc2.getResampledGestures();
+		for (Iterator<Vector<Point2D>> iterator = examples2.iterator(); iterator.hasNext();) {
+			Vector<Point2D> ex2  = iterator.next();
+			double dis = distance(template1, ex2);
+			if(dis < minDis) {
+				minDis = dis;
+			}
+		}
+
+		distances[index2][index1] = minDis;
+		
+		return distances[index1][index2];
 	}
 
 	/**
@@ -172,16 +211,17 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		for (Iterator<ResampledGestureClass> classesIterator = classes.iterator(); classesIterator.hasNext();) {
 			ResampledGestureClass nextClass = classesIterator.next();
 			if(nextClass.getResampledGestures().size() > 0) {
-			for (Iterator<Vector<Point2D>> gesturesIterator = nextClass.getResampledGestures().iterator(); gesturesIterator.hasNext();) {
-				Vector<Point2D> gesturePoints = gesturesIterator.next();
-				currentScore = distance(inputPointsResampled, gesturePoints);
-				if (currentScore < minScore) {
-					minScore = currentScore;
-					recognized = nextClass;
+				for (Iterator<Vector<Point2D>> gesturesIterator = nextClass.getResampledGestures().iterator(); gesturesIterator.hasNext();) {
+					Vector<Point2D> gesturePoints = gesturesIterator.next();
+					currentScore = distance(inputPointsResampled, gesturePoints);
+					if (currentScore < minScore) {
+						minScore = currentScore;
+						recognized = nextClass;
+					}
 				}
-			}
-			} else {
-				Vector<Point2D> gesturePoints = getTemplates().get(getClassesNames().indexOf(nextClass.getName()));
+			} 
+			Vector<Point2D> gesturePoints = getTemplates().get(getClassesNames().indexOf(nextClass.getName()));
+			if(gesturePoints != null) {
 				currentScore = distance(inputPointsResampled, gesturePoints);
 				if (currentScore < minScore) {
 					minScore = currentScore;
@@ -452,6 +492,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 		for (Iterator<ResampledGestureClass> iterator = classes.iterator(); iterator.hasNext();) {
 			ResampledGestureClass next = iterator.next();
 			if(next != null) {
+				invalidateDistance(next.getName());
 				next.removeExample(example);
 				fireExampleRemoved(next.getName(), example);
 			}
@@ -462,6 +503,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	 * {@inheritDoc}
 	 */
 	public void addExample(String className, Gesture example) {
+		invalidateDistance(className);
 		int index = classesNames.indexOf(className);
 		if(index == -1) return;
 		ResampledGestureClass gestureClass = classes.get(index);
@@ -497,6 +539,7 @@ public class ShapeMatchingClassifier extends AbstractClassifier {
 	 */
 	public void setTemplate(String className, Vector<Point2D> template) {
 		int index = classesNames.indexOf(className);
+		invalidateDistance(className);
 		if(index == -1) return;
 		templates.remove(index);
 		Vector<Point2D> newPoints = new Vector<Point2D>();

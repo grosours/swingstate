@@ -470,6 +470,16 @@ public abstract class CTag extends Tag implements CElement {
 	/**
 	 * {@inheritDoc}
 	 */
+	public CElement fixReferenceShapeToCurrent() { 
+		reset(); 
+		while(hasNext())
+			(nextShape()).fixReferenceShapeToCurrent();
+		return this;
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
 	public CElement translateBy(double tx, double ty){ 
 		reset(); 
 		while(hasNext())

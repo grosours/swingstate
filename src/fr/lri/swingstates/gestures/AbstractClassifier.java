@@ -47,6 +47,38 @@ public abstract class AbstractClassifier {
 
 	private EventListenerList classifierListeners = null;
 
+	protected double[][] distances = new double[50][50];
+	
+	public AbstractClassifier() {
+		invalidateAllDistances();
+	}
+	
+	
+	protected void invalidateAllDistances() {
+		for(int i = 0; i < distances.length; i++) {
+			for(int j = 0; j < distances[0].length; j++) {
+				distances[i][j] = Double.NaN;
+			}
+		}
+	}
+	
+	protected void invalidateDistance(String className) {
+		int index = classesNames.indexOf(className);
+		for(int i = 0; i < distances.length; i++) {
+			distances[i][index] = Double.NaN;
+		}
+		for(int i = 0; i < distances[0].length; i++) {
+			distances[index][i] = Double.NaN;
+		}
+	}
+	
+	protected void invalidateDistance(String className1, String className2) {
+		int index1 = classesNames.indexOf(className1);
+		int index2 = classesNames.indexOf(className2);
+			distances[index2][index1] = Double.NaN;
+			distances[index1][index2] = Double.NaN;
+	}
+	
 	public synchronized void addClassifierListener(ClassifierListener l) {
 		if(l == null) return;
 		if(classifierListeners == null) classifierListeners = new EventListenerList();
@@ -136,6 +168,16 @@ public abstract class AbstractClassifier {
 	public int addClass(String className) {
 		classesNames.add(className);
 		templates.add(null);
+		if(classesNames.size() > distances.length) {
+			double[][] tmp = new double[2*distances.length][2*distances.length];
+			for (int i = 0; i < distances.length; i++) {
+				for (int j = 0; j < distances[0].length; j++) {
+					tmp[i][j] = distances[i][j];
+				}
+			}
+			distances = tmp;
+		}
+		invalidateDistance(className);
 		return classesNames.size() - 1;
 	}
 
@@ -164,6 +206,7 @@ public abstract class AbstractClassifier {
 	 *            The name of the class of gestures to remove.
 	 */
 	public void removeClass(String className) {
+		invalidateDistance(className);
 		int index = classesNames.indexOf(className);
 		if (index == -1)
 			System.err.println("no class " + className + " in the classifier");
@@ -181,6 +224,7 @@ public abstract class AbstractClassifier {
 	 */
 	public void renameClass(String previousClassName, String newClassName) {
 		int index = classesNames.indexOf(previousClassName);
+		invalidateDistance(previousClassName);
 		classesNames.set(index, newClassName);
 	}
 
@@ -228,6 +272,7 @@ public abstract class AbstractClassifier {
 	 * Resets this classifier (i.e. removes all the classes of gestures).
 	 */
 	public void reset() {
+		invalidateAllDistances();
 		classesNames.clear();
 		templates.clear();
 	}
@@ -239,6 +284,7 @@ public abstract class AbstractClassifier {
 	 */
 	public void setTemplate(String className, Vector<Point2D> template) {
 		int index = classesNames.indexOf(className);
+		invalidateDistance(className);
 		if(index == -1) return;
 		templates.remove(index);
 		templates.add(index, template);
@@ -320,7 +366,7 @@ public abstract class AbstractClassifier {
 		}
 	}
 	
-	public abstract Vector<Double> distance(String gesture1, String gesture2);
+	public abstract double distance(String gesture1, String gesture2);
 	
 	public int getMinimumStrokeLength() {
 		return minimumStrokeLength;

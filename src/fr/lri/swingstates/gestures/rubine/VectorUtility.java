@@ -62,8 +62,9 @@ class VectorUtility {
 		if (vector.size() != m.nRows || vector.size() != m.nCols)
 			System.err.println("QuadraticForm: bad matrix size\n");
 		for (int i = 0; i < vector.size(); i++)
-			for (int j = 0; j < vector.size(); j++)
+			for (int j = 0; j < vector.size(); j++) {
 				res += m.items[i][j] * vector.get(i) * vector.get(j);
+			}
 		return res;
 	}
 

@@ -781,7 +781,8 @@ public class CShape implements Cloneable, CElement
 	 * @return this shape.
 	 */
 	public CElement setParent(CShape p) {
-
+		if(this == p) return this;
+		
 		// detach from our parent if any
 		if (parent != null) {
 			parent.children.remove(this);
@@ -1591,7 +1592,7 @@ public class CShape implements Cloneable, CElement
 	 * 
 	 * @return this shape.
 	 */
-	public CShape fixReferenceShapeToCurrent() {
+	public CElement fixReferenceShapeToCurrent() {
 		shape = getAbsTransform().createTransformedShape(shape);
 		rx = 0.5;
 		ry = 0.5;
@@ -1600,6 +1601,41 @@ public class CShape implements Cloneable, CElement
 		theta = 0;
 		sx = 1;
 		sy = 1;
+		
+//		transform = getAbsTransform();
+//		rx = 0.5;
+//		ry = 0.5;
+//		tx = 0;
+//		ty = 0;
+//		theta = 0;
+//		sx = 1;
+//		sy = 1;
+		
+//		transform = getAbsTransform();
+//		rx = 0.5;
+//		ry = 0.5;
+//		tx = transform.getTranslateX();
+//		ty = transform.getTranslateY();
+//		double[] coords = {0, 0, 1, 0};
+//		double[] transformedCoords = new double[4];
+//		transform.transform(coords, 0, transformedCoords, 0, 2);
+//		double dy = Math.abs(transformedCoords[3] - transformedCoords[1]);
+//		double l = Point2D.distance(transformedCoords[0], transformedCoords[1], transformedCoords[2], transformedCoords[3]);
+//		theta = Math.asin(dy / l);		
+//		// correct for quadrant
+//		if (transformedCoords[3] - transformedCoords[1] > 0)
+//			if (transformedCoords[2] - transformedCoords[0] < 0)
+//				theta = Math.PI - theta;
+//		else
+//			if (transformedCoords[2] - transformedCoords[0] > 0)
+//				theta = 2 * Math.PI - theta;
+//			else
+//				theta = theta + Math.PI;
+//		sx = transform.getScaleX();
+//		sy = transform.getScaleY();
+		
+		
+		
 		transform = new AffineTransform();
 		absTransform = new AffineTransform();
 		if(parent != null)

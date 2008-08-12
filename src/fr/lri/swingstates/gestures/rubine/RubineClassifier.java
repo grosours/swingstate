@@ -137,8 +137,8 @@ public class RubineClassifier extends AbstractClassifier {
 
 	private static double EPSILON = 1.0e-6;
 
-	static double DIST_SQ_THRESHOLD = 3 * 3;
-	static double SE_TH_ROLLOFF = 4 * 4;
+	public static double DIST_SQ_THRESHOLD = 3 * 3;
+	public static double SE_TH_ROLLOFF = 4 * 4;
 
 	/**
 	 * index of <i>cosinus initial angle</i> (angle between first and third points) in a vector of features.
@@ -216,13 +216,17 @@ public class RubineClassifier extends AbstractClassifier {
 	private boolean compiled;
 
 //	private double probabilityThreshold = 1.0;
-	private int mahalanobisThreshold = 1000;
+	private int mahalanobisThreshold = 500000;
 
 //	private transient double currentProbability = 0;
 	private transient double currentDistance = 0;
 
 	protected ArrayList<RubineGestureClass>    classes = new ArrayList<RubineGestureClass>();
 
+	public RubineClassifier() {
+		super();
+	}
+	
 	/**
 	 * Builds a new classifier by loading its definition in a file.
 	 * 
@@ -414,14 +418,12 @@ public class RubineClassifier extends AbstractClassifier {
 
 		init();
 
-		Vector<Vector<Double>> w = weights;
-		ArrayList<Double> cst = cnst;
 		for (nc = 0; nc < classes.size(); nc++) {
-			if (nc >= w.size())
-				w.add(VectorUtility.mult(d.get(nc).getAverage(), invAvgCov));
+			if (nc >= weights.size())
+				weights.add(VectorUtility.mult(d.get(nc).getAverage(), invAvgCov));
 			else
-				w.set(nc, VectorUtility.mult(d.get(nc).getAverage(), invAvgCov));
-			cst.set(nc, -0.5 * VectorUtility.scalarProduct(w.get(nc), d.get(nc).getAverage()));
+				weights.set(nc, VectorUtility.mult(d.get(nc).getAverage(), invAvgCov));
+			cnst.set(nc, -0.5 * VectorUtility.scalarProduct(weights.get(nc), d.get(nc).getAverage()));
 			/* could add log(priorprob class) to cnst */
 		}
 		compiled = true;
@@ -778,8 +780,54 @@ public class RubineClassifier extends AbstractClassifier {
 		double sumAbsAngles = 0;
 		double sharpness = 0;
 		Point2D del = null;
-		Point2D delta = new Point2D.Double();
-		double maxSpeed = Double.MIN_VALUE;
+//		Point2D delta = new Point2D.Double();
+		double maxSpeed = 0;
+
+//		for (Iterator<Point2D> iterator = g.getPoints().iterator(); iterator.hasNext();) {
+//			next = iterator.next();
+//			if (previous != null) {
+//				del = new Point2D.Double(previous.getX() - next.getX(), previous.getY() - next.getY()); // delta
+//				magsq = del.getX() * del.getX() + del.getY() * del.getY();
+//				if (magsq <= DIST_SQ_THRESHOLD) {
+//					continue; /* ignore this point */
+//				}
+//			}
+//
+//			double dist = Math.sqrt(magsq);
+//			length += dist;
+//
+//			if (i >= 3) {
+//				double theta1 = del.getX() * delta.getY() - delta.getX() * del.getY();
+//				double theta2 = del.getX() * delta.getX() + del.getY() * delta.getY();
+//				double th = Math.atan2(theta1, theta2);
+//				double absth = Math.abs(th);
+//				rotation += th;
+//				sumAbsAngles += absth;
+//				sharpness += th * th;
+//
+//				int indexPrevious = g.getPoints().indexOf(previous);
+//				double lastTime = g.getPointTimes().get(indexPrevious);
+////				double v = dist / (g.getPointTimes().get(g.getPointTimes().size() - 1) - lasttime);
+////				if (g.getPointTimes().get(g.getPointTimes().size() - 1) > lasttime && v > maxSpeed)
+////					maxSpeed = v;
+//				
+////				int indexCurrent = g.getPoints().indexOf(next);
+////				double currentTime = g.getPointTimes().get(indexCurrent);
+////				if(currentTime != lastTime) {
+////					double v = dist / (currentTime - lastTime);
+////					if (v > maxSpeed) {
+////						maxSpeed = v;
+////					}
+////				}
+//			}
+//
+//			if (previous != null) {
+//				delta.setLocation(del.getX(), del.getY());
+//			}
+//			
+//			previous = next;
+//			i++;
+//		}
 
 		for (Iterator<Point2D> iterator = g.getPoints().iterator(); iterator.hasNext();) {
 			next = iterator.next();
@@ -795,34 +843,25 @@ public class RubineClassifier extends AbstractClassifier {
 			length += dist;
 
 			if (i >= 3) {
-				double theta1 = del.getX() * delta.getY() - delta.getX() * del.getY();
-				double theta2 = del.getX() * delta.getX() + del.getY() * delta.getY();
-				double th = Math.atan2(theta1, theta2);
+				t1 = next.getX() - previous.getX();
+				t2 = next.getY() - previous.getY();
+				double r = Math.sqrt(t1 * t1 + t2 * t2);
+				
+				if(r == 0) continue;
+				
+				double th = t2 < 0 ? Math.acos(t1/r) : -Math.acos(t1/r);
 				double absth = Math.abs(th);
+				
 				rotation += th;
 				sumAbsAngles += absth;
 				sharpness += th * th;
 
-				int indexPrevious = g.getPoints().indexOf(previous);
-				double lasttime = g.getPointTimes().get(indexPrevious);
-//				double v = dist / (g.getPointTimes().get(g.getPointTimes().size() - 1) - lasttime);
-//				if (g.getPointTimes().get(g.getPointTimes().size() - 1) > lasttime && v > maxSpeed)
-//					maxSpeed = v;
-				
-				int indexCurrent = g.getPoints().indexOf(next);
-				double currentTime = g.getPointTimes().get(indexCurrent);
-				double v = dist / (currentTime - lasttime);
-				if (v > maxSpeed)
-					maxSpeed = v;
 			}
-
-			if (previous != null) {
-				delta.setLocation(del.getX(), del.getY());
-			}
+			
 			previous = next;
 			i++;
 		}
-
+		
 		compiledData.set(PF_LEN, length);
 		compiledData.set(PF_TH, rotation);
 		compiledData.set(PF_ATH, sumAbsAngles);
@@ -832,7 +871,9 @@ public class RubineClassifier extends AbstractClassifier {
 		// a 1/10th of
 		// second
 
-		compiledData.set(PF_MAXV, maxSpeed * 10000);
+//		compiledData.set(PF_MAXV, maxSpeed * 10000);
+		compiledData.set(PF_MAXV, maxSpeed);
+//		System.out.println("\t-- maxSpeed: "+maxSpeed);
 		return compiledData;
 	}
 
@@ -956,6 +997,7 @@ public class RubineClassifier extends AbstractClassifier {
 		for (Iterator<RubineGestureClass> iterator = classes.iterator(); iterator.hasNext();) {
 			RubineGestureClass next = iterator.next();
 			if(next != null) {
+				invalidateDistance(next.getName());
 				next.removeExample(example);
 				fireExampleRemoved(next.getName(), example);
 			}
@@ -966,6 +1008,7 @@ public class RubineClassifier extends AbstractClassifier {
 	 * {@inheritDoc}
 	 */
 	public void addExample(String className, Gesture example) {
+		invalidateDistance(className);
 		int index = classesNames.indexOf(className);
 		if(index == -1) return;
 		RubineGestureClass gestureClass = classes.get(index);
@@ -997,23 +1040,39 @@ public class RubineClassifier extends AbstractClassifier {
 		return gc.getGestures();
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public Vector<Double> distance(String gesture1, String gesture2) {
-		Vector<Double> res = new Vector<Double>();
+	
+	public double distance(String gesture1, String gesture2) {
+		compile();
+		if(!compiled) return 10;
+		
 		int index1 = classesNames.indexOf(gesture1);
 		int index2 = classesNames.indexOf(gesture2);
+		
+		if(!Double.isNaN(distances[index1][index2])) {
+			return distances[index1][index2];
+		}
+
+		double dis = 0;
+		
 		RubineGestureClass gc1 = classes.get(index1);
 		RubineGestureClass gc2 = classes.get(index2);
-		Iterator<Double> it1 = gc1.getAverage().iterator();
-		Iterator<Double> it2 = gc2.getAverage().iterator();
-		while(it1.hasNext()) {
-			double v1 = it1.next();
-			double v2 = it2.next();
-			res.add(v2 - v1);
+		Vector<Double> av1 = gc1.getAverage();
+		Vector<Double> av2 = gc2.getAverage();
+		
+		Vector<Double> w1 = weights.get(index1);
+		Vector<Double> w2 = weights.get(index2);
+		for (int i = 0; i < av1.size(); i++) {
+			dis += Math.pow(w1.get(i)*av1.get(i) - w2.get(i)*av2.get(i), 2);
 		}
-		return res;
+		dis = Math.sqrt(dis);
+		
+//		dis = mahalanobisDistance(av1, av2, invAvgCov);
+		
+		
+		distances[index1][index2] = dis;
+		distances[index2][index1] = dis;
+		
+		return dis;
 	}
 	
 }
