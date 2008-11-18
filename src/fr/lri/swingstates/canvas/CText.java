@@ -243,11 +243,10 @@ public class CText extends CShape {
 		Rectangle2D bounds = getAbsShape().getBounds2D();
 		return (CRectangle) (
 				new CRectangle(
-						bounds.getMinX(), 
-						bounds.getMinY(), 
-						bounds.getWidth(), 
-						bounds.getHeight()))
-				.setReferencePoint(0, 1);
+						bounds.getCenterX() - w/2, 
+						bounds.getCenterY() - h/2, 
+						w, h))
+				.setReferencePoint(getReferenceX(), getReferenceY());
 	}
 	
 	/**
@@ -262,11 +261,10 @@ public class CText extends CShape {
 		Rectangle2D bounds = getAbsShape().getBounds2D();
 		return (CEllipse) (
 				new CEllipse(
-						bounds.getMinX(), 
-						bounds.getMinY(), 
-						bounds.getWidth(), 
-						bounds.getHeight()))
-				.setReferencePoint(0, 1);
+						bounds.getCenterX() - w/2, 
+						bounds.getCenterY() - h/2, 
+						w, h))
+				.setReferencePoint(getReferenceX(), getReferenceY());
 	}
 	
 	/**
